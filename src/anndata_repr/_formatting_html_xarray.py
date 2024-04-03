@@ -164,7 +164,7 @@ def short_data_repr_html(obj: pd.Series) -> str:
 def _icon(icon_name) -> str:
     # icon_name should be defined in xarray/static/html/icon-svg-inline.html
     return (
-        f"<svg class='icon xr-{icon_name}'>"
+        f"<svg class='icon ad-{icon_name}'>"
         f"<use xlink:href='#{icon_name}'>"
         "</use>"
         "</svg>"
@@ -184,12 +184,12 @@ def collapsible_section(
     tip = " title='Expand/collapse section'" if enabled else ""
 
     return (
-        f"<input id='{data_id}' class='xr-section-summary-in' "
+        f"<input id='{data_id}' class='ad-section-summary-in' "
         f"type='checkbox' {enabled} {collapsed}>"
-        f"<label for='{data_id}' class='xr-section-summary' {tip}>"
+        f"<label for='{data_id}' class='ad-section-summary' {tip}>"
         f"{name}:{n_items_span}</label>"
-        f"<div class='xr-section-inline-details'>{inline_details}</div>"
-        f"<div class='xr-section-details'>{details}</div>"
+        f"<div class='ad-section-inline-details'>{inline_details}</div>"
+        f"<div class='ad-section-details'>{details}</div>"
     )
 
 
@@ -199,17 +199,17 @@ def _obj_repr(obj, header_components, sections):
     If CSS is not injected (untrusted notebook), fallback to the plain text repr.
 
     """
-    header = f"<div class='xr-header'>{''.join(h for h in header_components)}</div>"
-    sections = "".join(f"<li class='xr-section-item'>{s}</li>" for s in sections)
+    header = f"<div class='ad-header'>{''.join(h for h in header_components)}</div>"
+    sections = "".join(f"<li class='ad-section-item'>{s}</li>" for s in sections)
 
     icons_svg, css_style = _load_static_files()
     return (
         "<div>"
         f"{icons_svg}<style>{css_style}</style>"
-        f"<pre class='xr-text-repr-fallback'>{escape(repr(obj))}</pre>"
-        "<div class='xr-wrap' style='display:none'>"
+        f"<pre class='ad-text-repr-fallback'>{escape(repr(obj))}</pre>"
+        "<div class='ad-wrap' style='display:none'>"
         f"{header}"
-        f"<ul class='xr-sections'>{sections}</ul>"
+        f"<ul class='ad-sections'>{sections}</ul>"
         "</div>"
         "</div>"
     )
