@@ -1,3 +1,10 @@
+# This file has been modified from its original version in the Dask project,
+# originally licensed under the BSD 3-Clause License.
+#
+# Copyright (c) 2014, Anaconda, Inc. and contributors
+# All rights reserved.
+
+# For the original file, see: https://github.com/dask/dask/blob/9246df0cf3b5d9e3a642d8b9fc6ccfd6995f64e1/dask/array/svg.py
 import math
 
 import numpy as np
@@ -5,6 +12,7 @@ import numpy as np
 __all__ = ["svg_2d"]
 
 text_style = 'font-size="1.0rem" font-weight="100" text-anchor="middle"'
+
 
 def svg_lines(x1, y1, x2, y2, max_n=20):
     """Convert points into lines of text for an SVG plot
@@ -150,5 +158,3 @@ def grid_points(chunks, sizes):
     cumchunks = [np.cumsum((0,) + c) for c in chunks]
     points = [x * size / x[-1] for x, size in zip(cumchunks, sizes)]
     return points
-
-
