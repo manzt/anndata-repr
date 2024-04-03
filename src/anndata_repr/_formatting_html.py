@@ -7,20 +7,33 @@ from html import escape
 from itertools import zip_longest
 
 import numpy as np
-from xarray.core.formatting import first_n_items, format_items, last_n_items
+from xarray.core.formatting import (
+    first_n_items,
+    format_items,
+    last_n_items,
+    short_array_repr,
+)
 
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
     collapsible_section,
-    short_data_repr_html,
 )
+
+from ._formatting_dask_svg import svg_2d
 
 if typing.TYPE_CHECKING:
     import anndata
     import pandas as pd
 
 __all__ = ["format_anndata_html"]
+
+
+def short_data_repr_html(obj) -> str:
+    if hasattr(obj, "_repr_html_"):
+        return obj._repr_html_()
+    text = short_array_repr(obj)
+    return f"<pre>{escape(text)}</pre>"
 
 
 # from xarray.core.formatting import format_array_flat
@@ -58,9 +71,9 @@ def format_array_flat(array: pd.Series, max_width: int):
     #                         <--> relevant_back_items is []
     pprint_str = "".join(
         [
-            " ".join(relevant_front_items[:num_front]),
+            " ".join(relevant_front_items[:num_front]),  # type: ignore
             padding,
-            " ".join(relevant_back_items[-num_back:]),
+            " ".join(relevant_back_items[-num_back:]),  # type: ignore
         ]
     )
 
@@ -85,7 +98,7 @@ def inline_variable_array_repr(col: pd.Series, max_width: int):
     return format_array_flat(col, max_width)
 
 
-def summarize_columns(name: str, col: pd.Series) -> str:
+def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     """Summarize a single column of a DataFrame.
 
     Parameters
@@ -103,6 +116,7 @@ def summarize_columns(name: str, col: pd.Series) -> str:
     """
     name = escape(str(name))
     dtype = escape(str(col.dtype))
+    cssclass_idx = " class='xr-has-index'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
     attrs_id = "attrs-" + str(uuid.uuid4())
@@ -111,12 +125,15 @@ def summarize_columns(name: str, col: pd.Series) -> str:
 
     preview = escape(inline_variable_array_repr(col, 35))
     # attrs_ul = summarize_attrs(var.attrs)
+    attrs_ul = "Nothing to see here..."
     data_repr = short_data_repr_html(col)
 
     attrs_icon = _icon("icon-file-text2")
     data_icon = _icon("icon-database")
 
     return (
+        f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
+        f"<div class='xr-var-dims'>{" "}</div>"
         f"<div class='xr-var-dtype'>{dtype}</div>"
         f"<div class='xr-var-preview xr-preview'>{preview}</div>"
         f"<input id='{attrs_id}' class='xr-var-attrs-in' "
@@ -126,7 +143,7 @@ def summarize_columns(name: str, col: pd.Series) -> str:
         f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>"
         f"<label for='{data_id}' title='Show/Hide data repr'>"
         f"{data_icon}</label>"
-        # f"<div class='xr-var-attrs'>{attrs_ul}</div>"
+        f"<div class='xr-var-attrs'>{attrs_ul}</div>"
         f"<div class='xr-var-data'>{data_repr}</div>"
     )
 
@@ -154,6 +171,33 @@ def summarize_obs(variables: pd.DataFrame) -> str:
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
+def format_var_obs(adata: anndata.AnnData) -> str:
+    dims_li = "".join(
+        f"<li><span class='xr-has-index'>obs</span>: {adata.n_obs}</li>"
+        f"<li><span class='xr-has-index'>var</span>: {adata.n_vars}</li>"
+    )
+    return f"<ul class='xr-dim-list'>{dims_li}</ul>"
+
+
+def array_section(X) -> str:
+    # "unique" id to expand/collapse the section
+    data_id = "section-" + str(uuid.uuid4())
+    collapsed = True
+    # TODO: Always use the svg_2d for the preview?
+    preview = svg_2d((tuple((dim,) for dim in X.shape)))
+    data_repr = short_data_repr_html(X)
+    data_icon = _icon("icon-database")
+
+    return (
+        "<div class='xr-array-wrap'>"
+        f"<input id='{data_id}' class='xr-array-in' type='checkbox' {collapsed}>"
+        f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
+        f"<div class='xr-array-preview xr-preview'><span>{preview}</span></div>"
+        f"<div class='xr-array-data'>{data_repr}</div>"
+        "</div>"
+    )
+
+
 def format_anndata_html(adata: anndata.AnnData) -> str:
     """Format an AnnData object as an HTML string.
 
@@ -163,22 +207,28 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
         The AnnData object to format.
 
     """
-    obj_type = f"{type(adata).__name__}"
+    obj_type = f"anndata.{type(adata).__name__}"
+    arr_name = ""  # TODO: add somethign here?
 
-    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+    header_components = [
+        f"<div class='xr-obj-type'>{obj_type}</div>",
+        f"<div class='xr-array-name'>{arr_name}</div>",
+        format_var_obs(adata),
+    ]
 
     sections = [
+        array_section(adata.X),
         collapsible_section(
             "obs",
             details=summarize_obs(adata.obs),
-            n_items=3,
+            n_items=len(adata.obs.columns),
             enabled=True,
-            collapsed=True,
+            collapsed=False,
         ),
         collapsible_section(
             "var",
             details=summarize_obs(adata.var),
-            n_items=3,
+            n_items=len(adata.var.columns),
             enabled=True,
             collapsed=True,
         ),
