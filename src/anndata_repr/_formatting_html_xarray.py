@@ -200,6 +200,16 @@ def _obj_repr(obj, header_components, sections):
 
     """
     header = f"<div class='xr-header'>{''.join(h for h in header_components)}</div>"
+    js_content = (Path(__file__).parent / "searchbox.js").read_text(encoding="utf-8")
+    js_contents_id = "search-" + str(uuid.uuid4())
+    js_content = js_content.replace("__REPLACE_ME__", js_contents_id) # unique id
+    searchbox = (
+                    f"<div class='searchbox-wrapper'>"
+                    f"<label for={js_contents_id}>Search</label>"
+                    f"<input type='text'/ id={js_contents_id}>"
+                    f"</div>"
+                    f'<script type="module">{js_content}</script>'
+                )
     sections = "".join(f"<li class='xr-section-item'>{s}</li>" for s in sections)
 
     icons_svg, css_style = _load_static_files()
@@ -209,10 +219,12 @@ def _obj_repr(obj, header_components, sections):
         f"<pre class='xr-text-repr-fallback'>{escape(repr(obj))}</pre>"
         "<div class='xr-wrap' style='display:none'>"
         f"{header}"
+        f"{searchbox}"
         f"<ul class='xr-sections'>{sections}</ul>"
         "</div>"
         "</div>"
     )
+
 
 
 def format_item(x, timedelta_format=None, quote_strings=True):
