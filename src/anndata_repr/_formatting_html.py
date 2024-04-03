@@ -74,14 +74,69 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
         f"<div class='xr-var-dims'></div>"
         f"<div class='xr-var-dtype'>{dtype}</div>"
         f"<div class='xr-var-preview xr-preview'>{preview}</div>"
-        f"<input id='{attrs_id}' class='xr-var-attrs-in' "
-        f"type='checkbox'>"
-        f"<label for='{attrs_id}' title='Show/Hide attributes'>"
-        f"{attrs_icon}</label>"
+        f"<input id='{attrs_id}' class='xr-var-attrs-in' type='checkbox'>"
+        f"<label for='{attrs_id}' title='Show/Hide attributes'>{attrs_icon}</label>"
         f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>"
-        f"<label for='{data_id}' title='Show/Hide data repr'>"
-        f"{data_icon}</label>"
+        f"<label for='{data_id}' title='Show/Hide data repr'>{data_icon}</label>"
         f"<div class='xr-var-attrs'>{attrs_ul}</div>"
+        f"<div class='xr-var-data'>{data_repr}</div>"
+    )
+
+def dataframe_to_table(dataframe):
+    # Initialize the table with the correct class names for styling
+    table = """<div class='relative overflow-x-auto my-div'>
+    <table class="">
+    """
+
+    def make_header(columns):
+        # Style the header row according to the provided CSS class names
+        header = '<thead class="table-header"><tr>'
+        for column in columns:
+            header += '<th scope="col" class="column-header">'+column+"</th>"
+        header += "</tr></thead>"
+        return header
+
+    def make_truncated_data(data):
+        # Function to truncate data if it's longer than 10 characters
+        if len(str(data)) > 10:
+            return str(data)[:10] + "..."
+        return str(data)
+
+    def make_row(row, index):
+        # Style each row according to the provided CSS class names, alternating row color not implemented in CSS
+        row_html = f'<tr class="table-row">'
+        for value in row:
+            row_html += f'<td class="table-cell">{make_truncated_data(value)}</td>'
+        row_html += "</tr>"
+        return row_html
+
+    # Construct the table header
+    table += make_header(dataframe.columns)
+
+    # Construct each row of the table
+    for index, row in enumerate(dataframe.itertuples(index=False), start=1):
+        table += make_row(row, index)
+
+    # Close the table and div tags
+    table += "</table></div>"
+    return table
+
+def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
+
+    name = 'Table'
+    cssclass_idx = " class='xr-has-index'" if is_index else ""
+
+    # "unique" ids required to expand/collapse subsections
+    data_id = "data-" + str(uuid.uuid4())
+
+    data_repr = dataframe_to_table(df[0:10])
+
+    data_icon = _icon("icon-database")
+
+    return (
+        f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
+        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>"
+        f"<label for='{data_id}' title='Show/Hide data repr'>{data_icon}</label>"
         f"<div class='xr-var-data'>{data_repr}</div>"
     )
 
@@ -100,6 +155,7 @@ def summarize_obs(variables: pd.DataFrame) -> str:
         The HTML representation of the variables.
     """
     li_items = []
+    li_items.append(f"<li class='xr-var-item'>{summarize_table(variables)}</li>")
     for k in variables:
         assert isinstance(k, str), "Column of dataframe is not a string"
         li_content = summarize_columns(k, variables[k])
