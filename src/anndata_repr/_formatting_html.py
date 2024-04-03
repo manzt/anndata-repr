@@ -19,6 +19,24 @@ if typing.TYPE_CHECKING:
 
 __all__ = ["format_anndata_html"]
 
+def summarize_attrs(obj: pd.Series) -> str:
+    """Summarize attributes of Pandas Series.
+    List of dtype, number of elements, number of unique elements, number of not None elements.
+    """
+    len_values = len(obj)
+    unique_values = len(obj.unique())
+    nonnull_values = obj.count()
+    dtype_values = obj.dtype
+    enum = {'dtype': dtype_values,
+             'Items': len_values, 
+             'Unique items': unique_values,
+             'Non-null items': nonnull_values}
+             
+    attrs_dl = "".join(
+        f"<dt><span>{escape(str(k))} :</span></dt><dd>{escape(str(v))}</dd>"
+        for k, v in enum.items()
+    )
+    return f"<dl class='xr-attrs-data'>{attrs_dl}</dl>"
 
 def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     """Summarize a single column of a DataFrame.
@@ -43,11 +61,9 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     # "unique" ids required to expand/collapse subsections
     attrs_id = "attrs-" + str(uuid.uuid4())
     data_id = "data-" + str(uuid.uuid4())
-    # disabled = "" if len(var.attrs) else "disabled"
 
     preview = escape(inline_variable_array_repr(col, 35))
-    # attrs_ul = summarize_attrs(var.attrs)
-    attrs_ul = "Nothing to see here..."
+    attrs_ul = summarize_attrs(col)
     data_repr = short_data_repr_html(col)
 
     attrs_icon = _icon("icon-file-text2")
@@ -55,7 +71,7 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
 
     return (
         f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
-        f"<div class='xr-var-dims'>{" "}</div>"
+        f"<div class='xr-var-dims'></div>"
         f"<div class='xr-var-dtype'>{dtype}</div>"
         f"<div class='xr-var-preview xr-preview'>{preview}</div>"
         f"<input id='{attrs_id}' class='xr-var-attrs-in' "
@@ -85,7 +101,8 @@ def summarize_obs(variables: pd.DataFrame) -> str:
     """
     li_items = []
     for k in variables:
-        li_content = summarize_columns(k, typing.cast("pd.Series", variables[k]))
+        assert isinstance(k, str), "Column of dataframe is not a string"
+        li_content = summarize_columns(k, variables[k])
         li_items.append(f"<li class='xr-var-item'>{li_content}</li>")
 
     vars_li = "".join(li_items)
