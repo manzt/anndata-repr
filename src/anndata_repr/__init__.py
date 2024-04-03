@@ -1,5 +1,5 @@
 from ._version import __version__  # noqa: F401
-from ._formatting_html import format_anndata_html  # noqa: F401
+from ._formatting_html_refactor import format_anndata_html  # noqa: F401
 
 
 # just a hack to inject our _repr_html_ method into anndata objects
