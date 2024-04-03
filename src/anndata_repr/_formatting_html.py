@@ -133,7 +133,7 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
 
     return (
         f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
-        f"<div class='xr-var-dims'>{" "}</div>"
+        f"<div class='xr-var-dims'></div>"
         f"<div class='xr-var-dtype'>{dtype}</div>"
         f"<div class='xr-var-preview xr-preview'>{preview}</div>"
         f"<input id='{attrs_id}' class='xr-var-attrs-in' "
