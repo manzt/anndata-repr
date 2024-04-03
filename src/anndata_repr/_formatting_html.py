@@ -1,101 +1,23 @@
 from __future__ import annotations
 
-import math
 import typing
 import uuid
 from html import escape
-from itertools import zip_longest
 
-import numpy as np
-from xarray.core.formatting import (
-    first_n_items,
-    format_items,
-    last_n_items,
-    short_array_repr,
-)
-
+from ._formatting_dask_svg import svg_2d
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
     collapsible_section,
+    short_data_repr_html,
+    inline_variable_array_repr,
 )
-
-from ._formatting_dask_svg import svg_2d
 
 if typing.TYPE_CHECKING:
     import anndata
     import pandas as pd
 
 __all__ = ["format_anndata_html"]
-
-
-def short_data_repr_html(obj) -> str:
-    if hasattr(obj, "_repr_html_"):
-        return obj._repr_html_()
-    text = short_array_repr(obj)
-    return f"<pre>{escape(text)}</pre>"
-
-
-# from xarray.core.formatting import format_array_flat
-def format_array_flat(array: pd.Series, max_width: int):
-    """Return a formatted string for as many items in the flattened version of
-    array that will fit within max_width characters.
-    """
-    # every item will take up at least two characters, but we always want to
-    # print at least first and last items
-    max_possibly_relevant = min(max(array.size, 1), max(math.ceil(max_width / 2.0), 2))
-    relevant_front_items = format_items(
-        first_n_items(array, (max_possibly_relevant + 1) // 2)
-    )
-    relevant_back_items = format_items(last_n_items(array, max_possibly_relevant // 2))
-    # interleave relevant front and back items:
-    #     [a, b, c] and [y, z] -> [a, z, b, y, c]
-    relevant_items = sum(
-        zip_longest(relevant_front_items, reversed(relevant_back_items)), ()
-    )[:max_possibly_relevant]
-
-    cum_len = np.cumsum([len(s) + 1 for s in relevant_items]) - 1
-    if (array.size > 2) and (
-        (max_possibly_relevant < array.size) or (cum_len > max_width).any()
-    ):
-        padding = " ... "
-        max_len = max(int(np.argmax(cum_len + len(padding) - 1 > max_width)), 2)
-        count = min(array.size, max_len)
-    else:
-        count = array.size
-        padding = "" if (count <= 1) else " "
-
-    num_front = (count + 1) // 2
-    num_back = count - num_front
-    # note that num_back is 0 <--> array.size is 0 or 1
-    #                         <--> relevant_back_items is []
-    pprint_str = "".join(
-        [
-            " ".join(relevant_front_items[:num_front]),  # type: ignore
-            padding,
-            " ".join(relevant_back_items[-num_back:]),  # type: ignore
-        ]
-    )
-
-    # As a final check, if it's still too long even with the limit in values,
-    # replace the end with an ellipsis
-    # NB: this will still returns a full 3-character ellipsis when max_width < 3
-    if len(pprint_str) > max_width:
-        pprint_str = pprint_str[: max(max_width - 3, 0)] + "..."
-
-    return pprint_str
-
-
-def maybe_truncate(obj, maxlen=500):
-    s = str(obj)
-    if len(s) > maxlen:
-        s = s[: (maxlen - 3)] + "..."
-    return s
-
-
-def inline_variable_array_repr(col: pd.Series, max_width: int):
-    """Build a one-line summary of a variable's data."""
-    return format_array_flat(col, max_width)
 
 
 def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:

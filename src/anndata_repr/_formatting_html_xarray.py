@@ -7,18 +7,136 @@
 # The original file is located at: https://raw.githubusercontent.com/pydata/xarray/97d3a3aaa071fa5341132331abe90ec39f914b52/xarray/core/formatting_html.py
 from __future__ import annotations
 
+import contextlib
+import math
+import typing
 import uuid
-from collections import OrderedDict
-from functools import lru_cache, partial
+from datetime import datetime, timedelta
+from functools import lru_cache
 from html import escape
 from importlib.resources import files
+from itertools import chain, zip_longest
+from pathlib import Path
 
-from xarray.core.formatting import (
-    inline_index_repr,
-    inline_variable_array_repr,
-    short_data_repr,
-)
-from xarray.core.options import _get_boolean_with_default
+import numpy as np
+import pandas as pd
+
+
+if typing.TYPE_CHECKING:
+    duckarray = typing.Any
+
+__all__ = [
+    "_icon",
+    "collapsible_section",
+    "short_data_repr_html",
+    "inline_variable_array_repr",
+]
+
+
+def last_n_items(array: pd.Series, n_desired: int):
+    """Returns the last n_desired items of an array"""
+    return np.ravel(np.asarray(array))[-n_desired:]
+
+
+def first_n_items(array: pd.Series, n_desired: int):
+    """Returns the first n_desired items of an array"""
+    return np.ravel(np.asarray(array))[:n_desired]
+
+
+def format_timedelta(t, timedelta_format=None):
+    """Cast given object to a Timestamp and return a nicely formatted string"""
+    try:
+        timedelta_str = str(pd.Timedelta(t))
+        days_str, time_str = timedelta_str.split(" days ")
+    except Exception:
+        # catch NaT and others that don't split nicely
+        return str(t)
+    else:
+        if timedelta_format == "date":
+            return days_str + " days"
+        elif timedelta_format == "time":
+            return time_str
+        else:
+            return timedelta_str
+
+
+def format_timestamp(t):
+    """Cast given object to a Timestamp and return a nicely formatted string"""
+    try:
+        timestamp = pd.Timestamp(t)
+        datetime_str = timestamp.isoformat(sep=" ")
+    except Exception:
+        datetime_str = str(t)
+
+    try:
+        date_str, time_str = datetime_str.split()
+    except ValueError:
+        # catch NaT and others that don't split nicely
+        return datetime_str
+    else:
+        if time_str == "00:00:00":
+            return date_str
+        else:
+            return f"{date_str}T{time_str}"
+
+
+def is_duck_array(
+    value: typing.Any,
+) -> typing.TypeGuard[duckarray[typing.Any, typing.Any]]:
+    # TODO: replace is_duck_array with runtime checks via _arrayfunction_or_api protocol on
+    # python 3.12 and higher (see https://github.com/pydata/xarray/issues/8696#issuecomment-1924588981)
+    if isinstance(value, np.ndarray):
+        return True
+    return (
+        hasattr(value, "ndim")
+        and hasattr(value, "shape")
+        and hasattr(value, "dtype")
+        and (
+            (hasattr(value, "__array_function__") and hasattr(value, "__array_ufunc__"))
+            or hasattr(value, "__array_namespace__")
+        )
+    )
+
+
+def short_array_repr(array: np.ndarray):
+    # default to lower precision so a full (abbreviated) line can fit on
+    # one line with the default display_width
+    options = {
+        "precision": 6,
+        # "linewidth": OPTIONS["display_width"],
+        # "threshold": OPTIONS["display_values_threshold"],
+    }
+    if array.ndim < 3:
+        edgeitems = 3
+    elif array.ndim == 3:
+        edgeitems = 2
+    else:
+        edgeitems = 1
+    options["edgeitems"] = edgeitems
+    with set_numpy_options(**options):
+        return repr(array)
+
+
+@contextlib.contextmanager
+def set_numpy_options(*args, **kwargs):
+    original = np.get_printoptions()
+    np.set_printoptions(*args, **kwargs)
+    try:
+        yield
+    finally:
+        np.set_printoptions(**original)
+
+
+def limit_lines(string: str, *, limit: int):
+    """
+    If the string is more lines than the limit,
+    this returns the middle lines replaced by an ellipsis
+    """
+    lines = string.splitlines()
+    if len(lines) > limit:
+        string = "\n".join(chain(lines[: limit // 2], ["..."], lines[-limit // 2 :]))
+    return string
+
 
 STATIC_FILES = (
     ("xarray.static.html", "icons-svg-inline.html"),
@@ -27,47 +145,20 @@ STATIC_FILES = (
 
 
 @lru_cache(None)
-def _load_static_files():
+def _load_static_files() -> tuple[str, str]:
     """Lazily load the resource files into memory the first time they are needed"""
-    return [
-        files(package).joinpath(resource).read_text(encoding="utf-8")
-        for package, resource in STATIC_FILES
-    ]
-
-
-def short_data_repr_html(array) -> str:
-    """Format "data" for DataArray and Variable."""
-    internal_data = getattr(array, "variable", array)._data
-    if hasattr(internal_data, "_repr_html_"):
-        return internal_data._repr_html_()
-    text = escape(short_data_repr(array))
-    return f"<pre>{text}</pre>"
-
-
-def format_dims(dim_sizes, dims_with_index) -> str:
-    if not dim_sizes:
-        return ""
-
-    dim_css_map = {
-        dim: " class='xr-has-index'" if dim in dims_with_index else ""
-        for dim in dim_sizes
-    }
-
-    dims_li = "".join(
-        f"<li><span{dim_css_map[dim]}>{escape(str(dim))}</span>: {size}</li>"
-        for dim, size in dim_sizes.items()
+    static_files = Path(__file__).parent / "static"
+    return (
+        (static_files / "icons-svg-inline.html").read_text(encoding="utf-8"),
+        (static_files / "style.css").read_text(encoding="utf-8"),
     )
 
-    return f"<ul class='xr-dim-list'>{dims_li}</ul>"
 
-
-def summarize_attrs(attrs) -> str:
-    attrs_dl = "".join(
-        f"<dt><span>{escape(str(k))} :</span></dt><dd>{escape(str(v))}</dd>"
-        for k, v in attrs.items()
-    )
-
-    return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
+def short_data_repr_html(obj: pd.Series) -> str:
+    if hasattr(obj, "_repr_html_"):
+        return obj._repr_html_()
+    text = short_array_repr(np.asarray(obj))
+    return f"<pre>{escape(text)}</pre>"
 
 
 def _icon(icon_name) -> str:
@@ -78,97 +169,6 @@ def _icon(icon_name) -> str:
         "</use>"
         "</svg>"
     )
-
-
-def summarize_variable(name, var, is_index=False, dtype=None) -> str:
-    variable = var.variable if hasattr(var, "variable") else var
-
-    cssclass_idx = " class='xr-has-index'" if is_index else ""
-    dims_str = f"({', '.join(escape(dim) for dim in var.dims)})"
-    name = escape(str(name))
-    dtype = dtype or escape(str(var.dtype))
-
-    # "unique" ids required to expand/collapse subsections
-    attrs_id = "attrs-" + str(uuid.uuid4())
-    data_id = "data-" + str(uuid.uuid4())
-    disabled = "" if len(var.attrs) else "disabled"
-
-    preview = escape(inline_variable_array_repr(variable, 35))
-    attrs_ul = summarize_attrs(var.attrs)
-    data_repr = short_data_repr_html(variable)
-
-    attrs_icon = _icon("icon-file-text2")
-    data_icon = _icon("icon-database")
-
-    return (
-        f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
-        f"<div class='xr-var-dims'>{dims_str}</div>"
-        f"<div class='xr-var-dtype'>{dtype}</div>"
-        f"<div class='xr-var-preview xr-preview'>{preview}</div>"
-        f"<input id='{attrs_id}' class='xr-var-attrs-in' "
-        f"type='checkbox' {disabled}>"
-        f"<label for='{attrs_id}' title='Show/Hide attributes'>"
-        f"{attrs_icon}</label>"
-        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>"
-        f"<label for='{data_id}' title='Show/Hide data repr'>"
-        f"{data_icon}</label>"
-        f"<div class='xr-var-attrs'>{attrs_ul}</div>"
-        f"<div class='xr-var-data'>{data_repr}</div>"
-    )
-
-
-def summarize_coords(variables) -> str:
-    li_items = []
-    for k, v in variables.items():
-        li_content = summarize_variable(k, v, is_index=k in variables.xindexes)
-        li_items.append(f"<li class='xr-var-item'>{li_content}</li>")
-
-    vars_li = "".join(li_items)
-
-    return f"<ul class='xr-var-list'>{vars_li}</ul>"
-
-
-def summarize_vars(variables) -> str:
-    vars_li = "".join(
-        f"<li class='xr-var-item'>{summarize_variable(k, v)}</li>"
-        for k, v in variables.items()
-    )
-
-    return f"<ul class='xr-var-list'>{vars_li}</ul>"
-
-
-def short_index_repr_html(index) -> str:
-    if hasattr(index, "_repr_html_"):
-        return index._repr_html_()
-
-    return f"<pre>{escape(repr(index))}</pre>"
-
-
-def summarize_index(coord_names, index) -> str:
-    name = "<br>".join([escape(str(n)) for n in coord_names])
-
-    index_id = f"index-{uuid.uuid4()}"
-    preview = escape(inline_index_repr(index))
-    details = short_index_repr_html(index)
-
-    data_icon = _icon("icon-database")
-
-    return (
-        f"<div class='xr-index-name'><div>{name}</div></div>"
-        f"<div class='xr-index-preview'>{preview}</div>"
-        f"<div></div>"
-        f"<input id='{index_id}' class='xr-index-data-in' type='checkbox'/>"
-        f"<label for='{index_id}' title='Show/Hide index repr'>{data_icon}</label>"
-        f"<div class='xr-index-data'>{details}</div>"
-    )
-
-
-def summarize_indexes(indexes) -> str:
-    indexes_li = "".join(
-        f"<li class='xr-var-item'>{summarize_index(v, i)}</li>"
-        for v, i in indexes.items()
-    )
-    return f"<ul class='xr-var-list'>{indexes_li}</ul>"
 
 
 def collapsible_section(
@@ -193,95 +193,6 @@ def collapsible_section(
     )
 
 
-def _mapping_section(
-    mapping, name, details_func, max_items_collapse, expand_option_name, enabled=True
-) -> str:
-    n_items = len(mapping)
-    expanded = _get_boolean_with_default(
-        expand_option_name, n_items < max_items_collapse
-    )
-    collapsed = not expanded
-
-    return collapsible_section(
-        name,
-        details=details_func(mapping),
-        n_items=n_items,
-        enabled=enabled,
-        collapsed=collapsed,
-    )
-
-
-def dim_section(obj) -> str:
-    dim_list = format_dims(obj.sizes, obj.xindexes.dims)
-
-    return collapsible_section(
-        "Dimensions", inline_details=dim_list, enabled=False, collapsed=True
-    )
-
-
-def array_section(obj) -> str:
-    # "unique" id to expand/collapse the section
-    data_id = "section-" + str(uuid.uuid4())
-    collapsed = (
-        "checked"
-        if _get_boolean_with_default("display_expand_data", default=True)
-        else ""
-    )
-    variable = getattr(obj, "variable", obj)
-    preview = escape(inline_variable_array_repr(variable, max_width=70))
-    data_repr = short_data_repr_html(obj)
-    data_icon = _icon("icon-database")
-
-    return (
-        "<div class='xr-array-wrap'>"
-        f"<input id='{data_id}' class='xr-array-in' type='checkbox' {collapsed}>"
-        f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
-        f"<div class='xr-array-preview xr-preview'><span>{preview}</span></div>"
-        f"<div class='xr-array-data'>{data_repr}</div>"
-        "</div>"
-    )
-
-
-coord_section = partial(
-    _mapping_section,
-    name="Coordinates",
-    details_func=summarize_coords,
-    max_items_collapse=25,
-    expand_option_name="display_expand_coords",
-)
-
-
-datavar_section = partial(
-    _mapping_section,
-    name="Data variables",
-    details_func=summarize_vars,
-    max_items_collapse=15,
-    expand_option_name="display_expand_data_vars",
-)
-
-index_section = partial(
-    _mapping_section,
-    name="Indexes",
-    details_func=summarize_indexes,
-    max_items_collapse=0,
-    expand_option_name="display_expand_indexes",
-)
-
-attr_section = partial(
-    _mapping_section,
-    name="Attributes",
-    details_func=summarize_attrs,
-    max_items_collapse=10,
-    expand_option_name="display_expand_attrs",
-)
-
-
-def _get_indexes_dict(indexes):
-    return {
-        tuple(index_vars.keys()): idx for idx, index_vars in indexes.group_by_index()
-    }
-
-
 def _obj_repr(obj, header_components, sections):
     """Return HTML repr of an xarray object.
 
@@ -304,47 +215,97 @@ def _obj_repr(obj, header_components, sections):
     )
 
 
-def array_repr(arr) -> str:
-    dims = OrderedDict((k, v) for k, v in zip(arr.dims, arr.shape))
-    if hasattr(arr, "xindexes"):
-        indexed_dims = arr.xindexes.dims
+def format_item(x, timedelta_format=None, quote_strings=True):
+    """Returns a succinct summary of an object as a string"""
+    if isinstance(x, (np.datetime64, datetime)):
+        return format_timestamp(x)
+    if isinstance(x, (np.timedelta64, timedelta)):
+        return format_timedelta(x, timedelta_format=timedelta_format)
+    elif isinstance(x, (str, bytes)):
+        if hasattr(x, "dtype"):
+            x = x.item()  # type: ignore
+        return repr(x) if quote_strings else x
+    elif hasattr(x, "dtype") and np.issubdtype(x.dtype, np.floating):
+        return f"{x.item():.4}"
     else:
-        indexed_dims = {}
-
-    obj_type = f"xarray.{type(arr).__name__}"
-    arr_name = f"'{arr.name}'" if getattr(arr, "name", None) else ""
-
-    header_components = [
-        f"<div class='xr-obj-type'>{obj_type}</div>",
-        f"<div class='xr-array-name'>{arr_name}</div>",
-        format_dims(dims, indexed_dims),
-    ]
-
-    sections = [array_section(arr)]
-
-    if hasattr(arr, "coords"):
-        sections.append(coord_section(arr.coords))
-
-    if hasattr(arr, "xindexes"):
-        indexes = _get_indexes_dict(arr.xindexes)
-        sections.append(index_section(indexes))
-
-    sections.append(attr_section(arr.attrs))
-
-    return _obj_repr(arr, header_components, sections)
+        return str(x)
 
 
-def dataset_repr(ds) -> str:
-    obj_type = f"xarray.{type(ds).__name__}"
+def format_items(x):
+    """Returns a succinct summaries of all items in a sequence as strings"""
+    x = np.asarray(x)
+    timedelta_format = "datetime"
+    if np.issubdtype(x.dtype, np.timedelta64):
+        x = x.astype(dtype="timedelta64[ns]")
+        day_part = x[~pd.isnull(x)].astype("timedelta64[D]").astype("timedelta64[ns]")
+        time_needed = x[~pd.isnull(x)] != day_part
+        day_needed = day_part != np.timedelta64(0, "ns")
+        if np.logical_not(day_needed).all():
+            timedelta_format = "time"
+        elif np.logical_not(time_needed).all():
+            timedelta_format = "date"
 
-    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+    formatted = [format_item(xi, timedelta_format) for xi in x]
+    return formatted
 
-    sections = [
-        # dim_section(ds),
-        coord_section(ds.coords),
-        datavar_section(ds.data_vars),
-        # index_section(_get_indexes_dict(ds.xindexes)),
-        # attr_section(ds.attrs),
-    ]
 
-    return _obj_repr(ds, header_components, sections)
+# from xarray.core.formatting import format_array_flat
+def format_array_flat(array: pd.Series, max_width: int):
+    """Return a formatted string for as many items in the flattened version of
+    array that will fit within max_width characters.
+    """
+    # every item will take up at least two characters, but we always want to
+    # print at least first and last items
+    max_possibly_relevant = min(max(array.size, 1), max(math.ceil(max_width / 2.0), 2))
+    relevant_front_items = format_items(
+        first_n_items(array, (max_possibly_relevant + 1) // 2)
+    )
+    relevant_back_items = format_items(last_n_items(array, max_possibly_relevant // 2))
+    # interleave relevant front and back items:
+    #     [a, b, c] and [y, z] -> [a, z, b, y, c]
+    relevant_items = sum(
+        zip_longest(relevant_front_items, reversed(relevant_back_items)), ()
+    )[:max_possibly_relevant]
+
+    cum_len = np.cumsum([len(s) + 1 for s in relevant_items]) - 1
+    if (array.size > 2) and (
+        (max_possibly_relevant < array.size) or (cum_len > max_width).any()
+    ):
+        padding = " ... "
+        max_len = max(int(np.argmax(cum_len + len(padding) - 1 > max_width)), 2)
+        count = min(array.size, max_len)
+    else:
+        count = array.size
+        padding = "" if (count <= 1) else " "
+
+    num_front = (count + 1) // 2
+    num_back = count - num_front
+    # note that num_back is 0 <--> array.size is 0 or 1
+    #                         <--> relevant_back_items is []
+    pprint_str = "".join(
+        [
+            " ".join(relevant_front_items[:num_front]),  # type: ignore
+            padding,
+            " ".join(relevant_back_items[-num_back:]),  # type: ignore
+        ]
+    )
+
+    # As a final check, if it's still too long even with the limit in values,
+    # replace the end with an ellipsis
+    # NB: this will still returns a full 3-character ellipsis when max_width < 3
+    if len(pprint_str) > max_width:
+        pprint_str = pprint_str[: max(max_width - 3, 0)] + "..."
+
+    return pprint_str
+
+
+def maybe_truncate(obj: typing.Any, maxlen: int = 500):
+    s = str(obj)
+    if len(s) > maxlen:
+        s = s[: (maxlen - 3)] + "..."
+    return s
+
+
+def inline_variable_array_repr(col: pd.Series, max_width: int):
+    """Build a one-line summary of a variable's data."""
+    return format_array_flat(col, max_width)
