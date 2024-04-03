@@ -105,6 +105,7 @@ def summarize_variable(name, var, is_index=False, dtype=None) -> str:
         f"<div class='xr-var-dims'>{dims_str}</div>"
         f"<div class='xr-var-dtype'>{dtype}</div>"
         f"<div class='xr-var-preview xr-preview'>{preview}</div>"
+        
         f"<input id='{attrs_id}' class='xr-var-attrs-in' "
         f"type='checkbox' {disabled}>"
         f"<label for='{attrs_id}' title='Show/Hide attributes'>"

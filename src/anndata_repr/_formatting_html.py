@@ -7,6 +7,7 @@ from html import escape
 from itertools import zip_longest
 
 import numpy as np
+import pandas as pd
 from xarray.core.formatting import (
     first_n_items,
     format_items,
@@ -117,6 +118,65 @@ def inline_variable_array_repr(col: pd.Series, max_width: int):
     return format_array_flat(col, max_width)
 
 
+def summarize_category(col):
+    counts = col.value_counts()
+    counts = counts.reset_index()
+    counts.columns = ["value", "count"]
+    counts = counts.sort_values(by="count", ascending=False)
+
+    if len(counts) > 10:
+        counts = counts.head(10) # take top 10
+        # counts = pd.concat([counts,(
+        #     pd.DataFrame({"value": "...", "count": len(col) - counts["count"].sum()})
+        # )])
+
+    counts_html = "".join(
+        f"<dt>{escape(str(row['value']))}</dt><dd>{row['count']}</dd>"
+        for _, row in counts.iterrows()
+    )
+    return counts_html
+
+# def histogram_to_svg(hist):
+
+
+
+def summarize_numeric(col):
+    # get min and max of pandas series, compute bins and draw and svg histogram
+    min_val = col.min()
+    max_val = col.max()
+    bins = np.linspace(min_val, max_val, 10)
+    hist, _ = np.histogram(col, bins=bins)
+    hist = hist / hist.sum()
+    print(hist)
+    # svg_content = histogram_to_svg(hist)
+
+    return hist
+
+
+def summarize_value_counts(name: str, col: pd.Series, is_index: bool = True) -> str:
+    """Summarize the value counts of a Series."""
+
+    # if column is category, show value counts 
+    if col.dtype.name == "category":
+        counts_html = summarize_category(col)
+    elif col.dtype.name == "object":
+        counts_html = summarize_category(col)
+    elif col.dtype.name == "bool":
+        counts_html = summarize_category(col)
+    elif col.dtype.name == "float32":
+        counts_html = summarize_numeric(col)
+    elif col.dtype.name == "int64":
+        counts_html = summarize_numeric(col)
+
+
+        
+    
+
+    return f"<dl class='xr-value-counts'>{counts_html}</dl>"
+
+
+
+
 def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     """Summarize a single column of a DataFrame.
 
@@ -148,11 +208,14 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     attrs_icon = _icon("icon-file-text2")
     data_icon = _icon("icon-database")
 
+    data_summary = summarize_value_counts(name, col, is_index)
+
     return (
         f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
         f"<div class='xr-var-dims'></div>"
         f"<div class='xr-var-dtype'>{dtype}</div>"
         f"<div class='xr-var-preview xr-preview'>{preview}</div>"
+        f"<div class='xr-var-summary' styles='display:none'>{data_summary}</div>"
         f"<input id='{attrs_id}' class='xr-var-attrs-in' "
         f"type='checkbox'>"
         f"<label for='{attrs_id}' title='Show/Hide attributes'>"
