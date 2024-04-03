@@ -36,7 +36,7 @@ def summarize_attrs(obj: pd.Series) -> str:
         f"<dt><span>{escape(str(k))} :</span></dt><dd>{escape(str(v))}</dd>"
         for k, v in enum.items()
     )
-    return f"<dl class='xr-attrs-data'>{attrs_dl}</dl>"
+    return f"<dl class='ad-attrs-data'>{attrs_dl}</dl>"
 
 def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     """Summarize a single column of a DataFrame.
@@ -56,7 +56,7 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     """
     name = escape(str(name))
     dtype = escape(str(col.dtype))
-    cssclass_idx = " class='xr-has-index'" if is_index else ""
+    cssclass_idx = " class='ad-has-index'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
     attrs_id = "attrs-" + str(uuid.uuid4())
@@ -70,16 +70,16 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     data_icon = _icon("icon-database")
 
     return (
-        f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
-        f"<div class='xr-var-dims'></div>"
-        f"<div class='xr-var-dtype'>{dtype}</div>"
-        f"<div class='xr-var-preview xr-preview'>{preview}</div>"
-        f"<input id='{attrs_id}' class='xr-var-attrs-in' type='checkbox'>"
+        f"<div class='ad-var-name'><span{cssclass_idx}>{name}</span></div>"
+        f"<div class='ad-var-dims'></div>"
+        f"<div class='ad-var-dtype'>{dtype}</div>"
+        f"<div class='ad-var-preview ad-preview'>{preview}</div>"
+        f"<input id='{attrs_id}' class='ad-var-attrs-in' type='checkbox'>"
         f"<label for='{attrs_id}' title='Show/Hide attributes'>{attrs_icon}</label>"
-        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>"
+        f"<input id='{data_id}' class='ad-var-data-in' type='checkbox'>"
         f"<label for='{data_id}' title='Show/Hide data repr'>{data_icon}</label>"
-        f"<div class='xr-var-attrs'>{attrs_ul}</div>"
-        f"<div class='xr-var-data'>{data_repr}</div>"
+        f"<div class='ad-var-attrs'>{attrs_ul}</div>"
+        f"<div class='ad-var-data'>{data_repr}</div>"
     )
 
 def dataframe_to_table(dataframe):
@@ -124,7 +124,7 @@ def dataframe_to_table(dataframe):
 def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
 
     name = 'Table'
-    cssclass_idx = " class='xr-has-index'" if is_index else ""
+    cssclass_idx = " class='ad-has-index'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
     data_id = "data-" + str(uuid.uuid4())
@@ -134,10 +134,10 @@ def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
     data_icon = _icon("icon-database")
 
     return (
-        f"<div class='xr-var-name'><span{cssclass_idx}>{name}</span></div>"
-        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>"
+        f"<div class='ad-var-name'><span{cssclass_idx}>{name}</span></div>"
+        f"<input id='{data_id}' class='ad-var-data-in' type='checkbox'>"
         f"<label for='{data_id}' title='Show/Hide data repr'>{data_icon}</label>"
-        f"<div class='xr-var-data'>{data_repr}</div>"
+        f"<div class='ad-var-data'>{data_repr}</div>"
     )
 
 
@@ -155,23 +155,23 @@ def summarize_obs(variables: pd.DataFrame) -> str:
         The HTML representation of the variables.
     """
     li_items = []
-    li_items.append(f"<li class='xr-var-item'>{summarize_table(variables)}</li>")
+    li_items.append(f"<li class='ad-var-item'>{summarize_table(variables)}</li>")
     for k in variables:
         assert isinstance(k, str), "Column of dataframe is not a string"
         li_content = summarize_columns(k, variables[k])
-        li_items.append(f"<li class='xr-var-item'>{li_content}</li>")
+        li_items.append(f"<li class='ad-var-item'>{li_content}</li>")
 
     vars_li = "".join(li_items)
 
-    return f"<ul class='xr-var-list'>{vars_li}</ul>"
+    return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
 def format_var_obs(adata: anndata.AnnData) -> str:
     dims_li = "".join(
-        f"<li><span class='xr-has-index'>obs</span>: {adata.n_obs}</li>"
-        f"<li><span class='xr-has-index'>var</span>: {adata.n_vars}</li>"
+        f"<li><span class='ad-has-index'>obs</span>: {adata.n_obs}</li>"
+        f"<li><span class='ad-has-index'>var</span>: {adata.n_vars}</li>"
     )
-    return f"<ul class='xr-dim-list'>{dims_li}</ul>"
+    return f"<ul class='ad-dim-list'>{dims_li}</ul>"
 
 
 def array_section(X) -> str:
@@ -184,11 +184,11 @@ def array_section(X) -> str:
     data_icon = _icon("icon-database")
 
     return (
-        "<div class='xr-array-wrap'>"
-        f"<input id='{data_id}' class='xr-array-in' type='checkbox' {collapsed}>"
+        "<div class='ad-array-wrap'>"
+        f"<input id='{data_id}' class='ad-array-in' type='checkbox' {collapsed}>"
         f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
-        f"<div class='xr-array-preview xr-preview'><span>{preview}</span></div>"
-        f"<div class='xr-array-data'>{data_repr}</div>"
+        f"<div class='ad-array-preview ad-preview'><span>{preview}</span></div>"
+        f"<div class='ad-array-data'>{data_repr}</div>"
         "</div>"
     )
 
@@ -206,8 +206,8 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     arr_name = ""  # TODO: add somethign here?
 
     header_components = [
-        f"<div class='xr-obj-type'>{obj_type}</div>",
-        f"<div class='xr-array-name'>{arr_name}</div>",
+        f"<div class='ad-obj-type'>{obj_type}</div>",
+        f"<div class='ad-array-name'>{arr_name}</div>",
         format_var_obs(adata),
     ]
 
