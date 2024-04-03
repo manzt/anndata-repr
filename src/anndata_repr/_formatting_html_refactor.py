@@ -5,6 +5,7 @@ import uuid
 from html import escape
 import math
 from datetime import datetime, timedelta
+import json
 
 import numpy as np
 
@@ -98,6 +99,7 @@ def summarize_table(df: pd.DataFrame, is_index: bool = True) -> dict:
 
     obj = {
         "id": data_id,
+        "name": "Table",
         "icon": data_icon,
         "content": df[0:10]
     }
@@ -117,6 +119,13 @@ def summarize_df(df: pd.DataFrame) -> dict:
     }
     return obj
 
+def summarize_anndata(adata: anndata.AnnData):
+    obj = {
+        'X': 'nothing here yet',
+        'obs': summarize_df(adata.obs),
+        'var': summarize_df(adata.var)
+    }
+    return obj
 
 # def format_var_obs(adata: anndata.AnnData) -> str:
 #     dims_li = "".join(
@@ -162,8 +171,9 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     #     f"<div class='xr-array-name'>{arr_name}</div>",
     #     format_var_obs(adata),
     # ]
-
-    return str(summarize_df(adata.obs))
+    # import pprint
+    return 'hello'
+    # return summarize_df(adata.obs)
     # print(summarize_df(adata.obs))
 
     # sections = [
@@ -290,41 +300,141 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
 
 
 # render
-# def dataframe_to_table(dataframe):
-#     # Initialize the table with the correct class names for styling
-#     table = """<div class='relative overflow-x-auto my-div'>
-#     <table class="">
+def render_table(dataframe):
+    # Initialize the table with the correct class names for styling
+    table = """<div class='relative overflow-x-auto my-div'>
+    <table class="">
+    """
+
+    def make_header(columns):
+        # Style the header row according to the provided CSS class names
+        header = '<thead class="table-header"><tr>'
+        for column in columns:
+            header += '<th scope="col" class="column-header">'+column+"</th>"
+        header += "</tr></thead>"
+        return header
+
+    def make_truncated_data(data):
+        # Function to truncate data if it's longer than 10 characters
+        if len(str(data)) > 10:
+            return str(data)[:10] + "..."
+        return str(data)
+
+    def make_row(row, index):
+        # Style each row according to the provided CSS class names, alternating row color not implemented in CSS
+        row_html = f'<tr class="table-row">'
+        for value in row:
+            row_html += f'<td class="table-cell">{make_truncated_data(value)}</td>'
+        row_html += "</tr>"
+        return row_html
+
+    # Construct the table header
+    table += make_header(dataframe.columns)
+
+    # Construct each row of the table
+    for index, row in enumerate(dataframe.itertuples(index=False), start=1):
+        table += make_row(row, index)
+
+    # Close the table and div tags
+    table += "</table></div>"
+    return table
+
+
+def render_attrs(df_attrs):  
+    df_attrs_str = "".join(
+        f"<dt><span>{escape(str(k))} :</span></dt><dd>{escape(str(v))}</dd>"
+        for k, v in df_attrs.items()
+    )
+    return f"<dl class='ad-attrs-data'>{df_attrs_str}</dl>"
+
+
+def render_df(df_int):
+    df_column_str = []
+
+    # add table
+    table_str = (
+        f"<li class='ad-var-item'>"
+            f"<li class='ad-var-item'>{df_int['table']['name']}</li>"
+            f"<input id='{df_int['table']['id']}' class='ad-var-data-in' type='checkbox'>"
+            f"<label for='{df_int['table']['id']}' title='Show/Hide data repr'>{df_int['table']['icon']}</label>"
+            f"<div class='ad-var-data'>{render_table(df_int['table']['content'])}</div>"
+        f"</li>"
+    )
+    df_column_str.append(table_str)
+
+    # add columns
+    for col in df_int['columns']:
+        col_str = (
+            f"<li class='ad-var-item'>"
+                f"<li class='ad-var-item'><span>{col['name']}</span></li>"
+                f"<li class='ad-var-dtype'>{col['dtype']}</li>"
+                f"<div class='ad-var-preview ad-preview'>{col['preview']}</div>"
+                f"<input id='{col['attrs']['id']}' class='ad-var-attrs-in' type='checkbox'>"
+                f"<label for='{col['attrs']['id']}' title='Show/Hide attributes'>{col['attrs']['icon']}</label>"
+                f"<input id='{col['data']['id']}' class='ad-var-data-in' type='checkbox'>"
+                f"<label for='{col['data']['id']}' title='Show/Hide data repr'>{col['data']['icon']}</label>"
+                f"<div class='ad-var-attrs'>{render_attrs(col['attrs']['content'])}</div>"
+                f"<div class='ad-var-data'>{col['data']['content']}</div>"
+            f"</li>"
+        )
+        df_column_str.append(col_str)
+
+    return f"<ul class='ad-var-list'>{''.join(df_column_str)}</ul>"
+
+
+def render_anndata(obj: dict):
+    anndata_str = []
+
+    # header_components = [
+    #     f"<div class='xr-obj-type'>{obj_type}</div>",
+    #     f"<div class='xr-array-name'>{arr_name}</div>",
+    #     format_var_obs(adata),
+    # ]
+
+
+    return render_df(obj['obs'])
+
+
+
+
+
+def show_anndata(adata: anndata.AnnData):
+    obj = summarize_anndata(adata)
+    str_obj = render_anndata(obj)
+
+    return str_obj#render_df(obj['obs'])
+
+
+
+# def _obj_repr(obj, header_components, sections):
+#     """Return HTML repr of an xarray object.
+
+#     If CSS is not injected (untrusted notebook), fallback to the plain text repr.
+
 #     """
+#     header = f"<div class='xr-header'>{''.join(h for h in header_components)}</div>"
+#     js_content = (Path(__file__).parent / "searchbox.js").read_text(encoding="utf-8")
+#     js_contents_id = "search-" + str(uuid.uuid4())
+#     js_content = js_content.replace("__REPLACE_ME__", js_contents_id) # unique id
+#     searchbox = (
+#                     f"<div class='searchbox-wrapper'>"
+#                     f"<label for={js_contents_id}>Search</label>"
+#                     f"<input type='text'/ id={js_contents_id}>"
+#                     f"</div>"
+#                     f'<script type="module">{js_content}</script>'
+#                 )
+#     sections = "".join(f"<li class='xr-section-item'>{s}</li>" for s in sections)
 
-#     def make_header(columns):
-#         # Style the header row according to the provided CSS class names
-#         header = '<thead class="table-header"><tr>'
-#         for column in columns:
-#             header += '<th scope="col" class="column-header">'+column+"</th>"
-#         header += "</tr></thead>"
-#         return header
+#     icons_svg, css_style = _load_static_files()
+#     return (
+#         "<div>"
+#         f"{icons_svg}<style>{css_style}</style>"
+#         f"<pre class='xr-text-repr-fallback'>{escape(repr(obj))}</pre>"
+#         "<div class='xr-wrap' style='display:none'>"
+#         f"{header}"
+#         f"{searchbox}"
+#         f"<ul class='xr-sections'>{sections}</ul>"
+#         "</div>"
+#         "</div>"
+#     )
 
-#     def make_truncated_data(data):
-#         # Function to truncate data if it's longer than 10 characters
-#         if len(str(data)) > 10:
-#             return str(data)[:10] + "..."
-#         return str(data)
-
-#     def make_row(row, index):
-#         # Style each row according to the provided CSS class names, alternating row color not implemented in CSS
-#         row_html = f'<tr class="table-row">'
-#         for value in row:
-#             row_html += f'<td class="table-cell">{make_truncated_data(value)}</td>'
-#         row_html += "</tr>"
-#         return row_html
-
-#     # Construct the table header
-#     table += make_header(dataframe.columns)
-
-#     # Construct each row of the table
-#     for index, row in enumerate(dataframe.itertuples(index=False), start=1):
-#         table += make_row(row, index)
-
-#     # Close the table and div tags
-#     table += "</table></div>"
-#     return table
