@@ -6,6 +6,22 @@ from pyparsing import col
 from anndata_repr._formatting_html import dataframe_to_table
 
 def get_display(adata):
+    svg = get_svg(adata)
+    table = get_layer_table(adata)
+    css_content = (pathlib.Path(__file__).parent / "static/style.css").read_text(encoding="utf-8")
+
+    display = (
+        f'<style>{css_content}</style>'
+        f'<div class="ad-display">'
+            f'<div class="ad-display-svg">{svg}</div>'
+            f'<div class="ad-display-table">{table}</div>'
+        f'</div>'
+    )
+
+    return display
+
+
+def get_svg(adata):
 
     # SIZING
     width = 1000

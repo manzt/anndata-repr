@@ -346,3 +346,21 @@ dl.ad-attrs {
   stroke: currentColor;
   fill: currentColor;
 }
+
+/* .ad-display-svg {
+  margin-right: 20px;
+}
+
+.ad-display-svg {
+  margin-right: 20px;
+} */
+
+.ad-display {
+  padding: 20px;
+}
+
+.ad-display-svg, .ad-display-table {
+  width: 40%;
+  float: left;
+  padding: 20px;
+} 
