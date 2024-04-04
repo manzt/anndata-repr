@@ -7,7 +7,7 @@ console.log('outp',output,output_id)
 const svg = output.querySelector("#"+svg_id);
 console.log('svg',svg,svg_id)
 
-const blocks = svg.querySelectorAll(".block")
+const blocks = svg.querySelectorAll(".ad-block")
 
 
 for (let b of blocks) {
