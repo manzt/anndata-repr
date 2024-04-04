@@ -182,8 +182,8 @@ def summarize_X(adata: anndata.AnnData) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def array_section(adata) -> str:
-    display = get_display(adata)
+def array_section(adata,unique_name) -> str:
+    display = get_display(adata,unique_name)
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
@@ -249,7 +249,8 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
 
     """
     obj_type = f"anndata.{type(adata).__name__}"
-    arr_name = ""  # TODO: add somethign here?
+    unique_name = uuid.uuid4()
+    print(unique_name)
 
     dims_li = "".join(
         f"<li><span class='ad-has-index'>obs</span>: {adata.n_obs}</li>"
@@ -258,13 +259,12 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
 
     header_components = [
         f"<div class='ad-obj-type'>{obj_type}</div>",
-        f"<div class='ad-array-name'>{arr_name}</div>",
         f"<ul class='ad-dim-list'>{dims_li}</ul>",
     ]
 
 
     sections = [
-        array_section(adata),
+        array_section(adata,unique_name),
         collapsible_section(
             "layers",
             details=summarize_X(adata),
@@ -325,4 +325,4 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
         else "",
     ]
 
-    return _obj_repr(adata, header_components, sections)
+    return _obj_repr(adata, header_components, sections,unique_name)
