@@ -172,7 +172,12 @@ def _icon(icon_name) -> str:
 
 
 def collapsible_section(
-    name, inline_details="", details="", n_items=None, enabled=True, collapsed=False
+    name,
+    inline_details="",
+    details="",
+    n_items=None,
+    enabled=True,
+    collapsed=False,
 ) -> str:
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
@@ -213,7 +218,6 @@ def _obj_repr(obj, header_components, sections):
         "</div>"
         "</div>"
     )
-
 
 
 def format_item(x, timedelta_format=None, quote_strings=True):
