@@ -189,8 +189,8 @@ def collapsible_section(
     tip = " title='Expand/collapse section'" if enabled else ""
 
     return (
-        f"<input id='{data_id}' class='ad-section-summary-in' "
-        f"type='checkbox' {enabled} {collapsed}>"
+        f"<input id='{data_id}' class='ad-section-summary-in check-{name}' "
+        f"type='checkbox' {enabled} {collapsed} data-blockname='{name}'>"
         f"<label for='{data_id}' class='ad-section-summary' {tip}>"
         f"{name}:{n_items_span}</label>"
         f"<div class='ad-section-inline-details'>{inline_details}</div>"
@@ -198,7 +198,7 @@ def collapsible_section(
     )
 
 
-def _obj_repr(obj, header_components, sections):
+def _obj_repr(obj, header_components, sections,unique_name=""):
     """Return HTML repr of an xarray object.
 
     If CSS is not injected (untrusted notebook), fallback to the plain text repr.
@@ -209,7 +209,7 @@ def _obj_repr(obj, header_components, sections):
 
     icons_svg, css_style = _load_static_files()
     return (
-        "<div>"
+        f"<div id='output_{unique_name}'>"
         f"{icons_svg}<style>{css_style}</style>"
         f"<pre class='ad-text-repr-fallback'>{escape(repr(obj))}</pre>"
         "<div class='ad-wrap' style='display:none'>"

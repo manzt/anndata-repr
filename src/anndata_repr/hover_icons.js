@@ -1,6 +1,11 @@
-const svg_id = "__REPLACE_ME__"
+const unique_id = "__REPLACE_ME__"
+const svg_id = `svg_${unique_id}`
+const output_id = `output_${unique_id}`
 
-const svg = document.getElementById(svg_id);
+let output = document.getElementById(output_id)
+console.log('outp',output,output_id)
+const svg = output.querySelector("#"+svg_id);
+console.log('svg',svg,svg_id)
 
 const blocks = svg.querySelectorAll(".block")
 
@@ -11,6 +16,19 @@ for (let b of blocks) {
     })
     b.addEventListener("mouseout", () => {
         change_opacity(blocks, 0, 1)
+    })
+    b.addEventListener("click", () => {
+        
+        const elements = output.getElementsByClassName('ad-section-summary-in')
+        for (let e of elements) {
+            if(e.dataset.blockname !== b.getAttribute("id")){
+                e.checked = false
+            } else {
+                e.checked = true
+            }
+        }
+
+        
     })
 }
 

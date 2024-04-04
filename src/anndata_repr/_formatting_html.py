@@ -3,7 +3,9 @@ from __future__ import annotations
 import typing
 import uuid
 from html import escape
+from anndata_repr._create_icons import get_display
 
+from anndata_repr._formatting_table import dataframe_to_table
 
 from ._formatting_dask_svg import svg_2d
 from ._formatting_html_xarray import (
@@ -89,47 +91,6 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
         f"<div class='ad-var-data'>{data_repr}</div>"
     )
 
-
-def dataframe_to_table(dataframe, max_len=10):
-    # Initialize the table with the correct class names for styling
-    table = """<div class='relative overflow-x-auto my-div'>
-    <table class="">
-    """
-
-    def make_header(columns):
-        # Style the header row according to the provided CSS class names
-        header = '<thead class="table-header"><tr>'
-        for column in columns:
-            header += '<th scope="col" class="column-header">' + column + "</th>"
-        header += "</tr></thead>"
-        return header
-
-    def make_truncated_data(data, max_len):
-        # Function to truncate data if it's longer than 10 characters
-        if len(str(data)) > max_len:
-            return str(data)[:max_len] + "..."
-        return str(data)
-
-    def make_row(row, index, max_len):
-        # Style each row according to the provided CSS class names, alternating row color not implemented in CSS
-        row_html = f'<tr class="table-row">'
-        for value in row:
-            row_html += (
-                f'<td class="table-cell">{make_truncated_data(value, max_len)}</td>'
-            )
-        row_html += "</tr>"
-        return row_html
-
-    # Construct the table header
-    table += make_header(dataframe.columns)
-
-    # Construct each row of the table
-    for index, row in enumerate(dataframe.itertuples(index=False), start=1):
-        table += make_row(row, index, max_len)
-
-    # Close the table and div tags
-    table += "</table></div>"
-    return table
 
 
 def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
@@ -221,20 +182,23 @@ def summarize_X(adata: anndata.AnnData) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def array_section(X) -> str:
+def array_section(adata,unique_name) -> str:
+    display = get_display(adata,unique_name)
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
     # TODO: Always use the svg_2d for the preview?
-    preview = svg_2d((tuple((dim,) for dim in X.shape)))
-    data_repr = short_data_repr_html(X)
+    def convert_newlines_to_br(html_string):
+        return html_string.replace('\n', '<br>')
+    data_repr = f"<p>{convert_newlines_to_br(adata.__repr__())}</p>"#short_data_repr_html(X)
     data_icon = _icon("icon-database")
 
+
     return (
-        "<div class='ad-array-wrap'>"
+        "<div class='ad-array-wrap version3'>"
         f"<input id='{data_id}' class='ad-array-in' type='checkbox' {collapsed}>"
         f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
-        f"<div class='ad-array-preview ad-preview'><span>{preview}</span></div>"
+        f"<div class='ad-array-preview ad-preview'><span>{display}</span></div>"
         f"<div class='ad-array-data'>{data_repr}</div>"
         "</div>"
     )
@@ -285,7 +249,8 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
 
     """
     obj_type = f"anndata.{type(adata).__name__}"
-    arr_name = ""  # TODO: add somethign here?
+    unique_name = uuid.uuid4()
+    print(unique_name)
 
     dims_li = "".join(
         f"<li><span class='ad-has-index'>obs</span>: {adata.n_obs}</li>"
@@ -294,12 +259,12 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
 
     header_components = [
         f"<div class='ad-obj-type'>{obj_type}</div>",
-        f"<div class='ad-array-name'>{arr_name}</div>",
         f"<ul class='ad-dim-list'>{dims_li}</ul>",
     ]
 
+
     sections = [
-        array_section(adata.X),
+        array_section(adata,unique_name),
         collapsible_section(
             "layers",
             details=summarize_X(adata),
@@ -360,4 +325,4 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
         else "",
     ]
 
-    return _obj_repr(adata, header_components, sections)
+    return _obj_repr(adata, header_components, sections,unique_name)
