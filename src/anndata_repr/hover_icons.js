@@ -12,6 +12,19 @@ for (let b of blocks) {
     b.addEventListener("mouseout", () => {
         change_opacity(blocks, 0, 1)
     })
+    b.addEventListener("click", () => {
+
+        const elements = document.getElementsByClassName('ad-section-summary-in')
+        for (let e of elements) {
+            if(e.dataset.blockname !== b.getAttribute("id")){
+                e.checked = false
+            } else {
+                e.checked = true
+            }
+        }
+
+        
+    })
 }
 
 function change_opacity(blocks, except_block, opacity) {

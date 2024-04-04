@@ -184,8 +184,8 @@ def collapsible_section(
     tip = " title='Expand/collapse section'" if enabled else ""
 
     return (
-        f"<input id='{data_id}' class='ad-section-summary-in' "
-        f"type='checkbox' {enabled} {collapsed}>"
+        f"<input id='{data_id}' class='ad-section-summary-in check-{name}' "
+        f"type='checkbox' {enabled} {collapsed} data-blockname='{name}'>"
         f"<label for='{data_id}' class='ad-section-summary' {tip}>"
         f"{name}:{n_items_span}</label>"
         f"<div class='ad-section-inline-details'>{inline_details}</div>"

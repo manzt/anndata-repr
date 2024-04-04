@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 import uuid
 from html import escape
+from anndata_repr._create_icons import get_display
 
 from ._formatting_dask_svg import svg_2d
 from ._formatting_html_xarray import (
@@ -174,7 +175,9 @@ def format_var_obs(adata: anndata.AnnData) -> str:
     return f"<ul class='ad-dim-list'>{dims_li}</ul>"
 
 
-def array_section(X) -> str:
+def array_section(adata) -> str:
+    X = adata.X
+    display = get_display(adata)
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
@@ -183,11 +186,12 @@ def array_section(X) -> str:
     data_repr = short_data_repr_html(X)
     data_icon = _icon("icon-database")
 
+
     return (
-        "<div class='ad-array-wrap'>"
+        "<div class='ad-array-wrap version3'>"
         f"<input id='{data_id}' class='ad-array-in' type='checkbox' {collapsed}>"
         f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
-        f"<div class='ad-array-preview ad-preview'><span>{preview}</span></div>"
+        f"<div class='ad-array-preview ad-preview'><span>{display}</span></div>"
         f"<div class='ad-array-data'>{data_repr}</div>"
         "</div>"
     )
@@ -211,8 +215,9 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
         format_var_obs(adata),
     ]
 
+
     sections = [
-        array_section(adata.X),
+        array_section(adata),
         collapsible_section(
             "obs",
             details=summarize_obs(adata.obs),
