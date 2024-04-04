@@ -215,6 +215,7 @@ def _obj_repr(obj, header_components, sections):
     )
 
 
+
 def format_item(x, timedelta_format=None, quote_strings=True):
     """Returns a succinct summary of an object as a string"""
     if isinstance(x, (np.datetime64, datetime)):
