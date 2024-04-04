@@ -114,7 +114,9 @@ def dataframe_to_table(dataframe, max_len=10):
         # Style each row according to the provided CSS class names, alternating row color not implemented in CSS
         row_html = f'<tr class="table-row">'
         for value in row:
-            row_html += f'<td class="table-cell">{make_truncated_data(value, max_len)}</td>'
+            row_html += (
+                f'<td class="table-cell">{make_truncated_data(value, max_len)}</td>'
+            )
         row_html += "</tr>"
         return row_html
 
@@ -321,31 +323,41 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             details=summarize_arrays(adata.obsm),
             n_items=len(adata.obsm),
             collapsed=True,
-        ),
+        )
+        if len(adata.obsm)
+        else "",
         collapsible_section(
             "obsp",
             details=summarize_arrays(adata.obsp),
             n_items=len(adata.obsp),
             collapsed=True,
-        ),
+        )
+        if len(adata.obsp)
+        else "",
         collapsible_section(
             "varm",
             details=summarize_arrays(adata.varm),
             n_items=len(adata.varm),
             collapsed=True,
-        ),
+        )
+        if len(adata.varm)
+        else "",
         collapsible_section(
             "varp",
             details=summarize_arrays(adata.varp),
             n_items=len(adata.varp),
             collapsed=True,
-        ),
+        )
+        if len(adata.varp)
+        else "",
         collapsible_section(
             "uns",
             details=summaize_uns(adata.uns),
             n_items=len(adata.uns),
             collapsed=True,
-        ),
+        )
+        if len(adata.uns)
+        else "",
     ]
 
     return _obj_repr(adata, header_components, sections)
