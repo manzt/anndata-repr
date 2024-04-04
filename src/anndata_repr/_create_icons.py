@@ -1,27 +1,8 @@
 import math
 import pathlib
 import uuid
-import pandas as pd
-from pyparsing import col
-from anndata_repr._formatting_html import dataframe_to_table
 
-def get_display(adata):
-    svg = get_svg(adata)
-    table = get_layer_table(adata)
-    css_content = (pathlib.Path(__file__).parent / "static/style.css").read_text(encoding="utf-8")
-
-    display = (
-        f'<style>{css_content}</style>'
-        f'<div class="ad-display">'
-            f'<div class="ad-display-svg">{svg}</div>'
-            f'<div class="ad-display-table">{table}</div>'
-        f'</div>'
-    )
-
-    return display
-
-
-def get_svg(adata):
+def get_display(adata, unique_name):
 
     # SIZING
     width = 1000
@@ -76,7 +57,7 @@ def get_svg(adata):
         '''<style>
             .cls-2,.cls-21{fill:#efc41c;}
             .cls-11,.cls-2,.cls-4,.cls-5,.cls-6,.cls-7,.cls-8,.cls-9{stroke:#010101;stroke-miterlimit:10;stroke-width:0.5px;}
-            .cls-3{fill:#333;}
+            .cls-3{fill:#fff;}
             .cls-4{fill:#f15c5a;}
             .cls-5{fill:#965ba5;}
             .cls-6{fill:#194c61;}
@@ -111,7 +92,7 @@ def get_svg(adata):
 
     # JAVSCRIPT
     js_content = (pathlib.Path(__file__).parent / "hover_icons.js").read_text(encoding="utf-8")
-    js_contents_id = "svg-" + str(uuid.uuid4())
+    js_contents_id = str(unique_name)
     js_content = js_content.replace("__REPLACE_ME__", js_contents_id) # unique id
 
     # X
@@ -176,7 +157,7 @@ def get_svg(adata):
     # COMBINE
     svg = (
         f'<script type="module">{js_content}</script>'
-        f'<svg id={js_contents_id} width={x_total} height={y_total}> viewBox="0 0 {x_total} {y_total}"'
+        f'<svg id={js_contents_id} width={x_total} height={y_total}>'
             f'<defs>'
                 f"{style}"
                 f"{uns_specification}"
@@ -237,40 +218,8 @@ def get_layers(g_name, class_name_front, class_name_back, n_layers, x_base, y_ba
     layers = (
         f'<g id={g_name} class="block">'
             f'{"".join(layer_list)}'
-            f'<text class="cls-3" stroke-width={} x={x_base + width/2} y={y_base + height/2}>{g_name}</text>'
+            f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2}>{g_name}</text>'
             f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2+10}>{shape_text}</text>'
         f'</g>'
     )
     return layers
-
-
-def get_layer_table(adata):
-    #*layer*    *n* *names*
-    # x     1       raw
-    # obsm  3       'X_pca', 'X_tsne', 'X_umap'
-    # obsp  1       distances_all
-
-    list_blocks = []
-
-    if adata.layers: 
-        n_layers = len(adata.layers)
-        names_layers = list(adata.layers)
-        list_blocks.append(['x', n_layers, names_layers])
-
-    for key in ['obsm', 'varm', 'obsp', 'varp']:
-        try: 
-            obj = getattr(adata, key)
-            n_layers = len(obj)
-            if n_layers == 0: 
-                continue
-            names_layers = list(obj)
-            list_blocks.append([key, n_layers, names_layers])
-
-        finally:
-            pass
-
-    df = pd.DataFrame(list_blocks, columns=['layer', 'n', 'names'])
-
-    df_str = dataframe_to_table(df, 100)
-
-    return df_str
