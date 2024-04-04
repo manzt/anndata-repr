@@ -15,9 +15,11 @@ from ._formatting_html_xarray import (
 
 if typing.TYPE_CHECKING:
     import anndata
+    from anndata._core.aligned_mapping import LayersBase
     import pandas as pd
 
 __all__ = ["format_anndata_html"]
+
 
 def summarize_attrs(obj: pd.Series) -> str:
     """Summarize attributes of Pandas Series.
@@ -27,16 +29,19 @@ def summarize_attrs(obj: pd.Series) -> str:
     unique_values = len(obj.unique())
     nonnull_values = obj.count()
     dtype_values = obj.dtype
-    enum = {'dtype': dtype_values,
-             'Items': len_values, 
-             'Unique items': unique_values,
-             'Non-null items': nonnull_values}
-             
+    enum = {
+        "dtype": dtype_values,
+        "Items": len_values,
+        "Unique items": unique_values,
+        "Non-null items": nonnull_values,
+    }
+
     attrs_dl = "".join(
         f"<dt><span>{escape(str(k))} :</span></dt><dd>{escape(str(v))}</dd>"
         for k, v in enum.items()
     )
     return f"<dl class='ad-attrs-data'>{attrs_dl}</dl>"
+
 
 def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     """Summarize a single column of a DataFrame.
@@ -82,6 +87,7 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
         f"<div class='ad-var-data'>{data_repr}</div>"
     )
 
+
 def dataframe_to_table(dataframe):
     # Initialize the table with the correct class names for styling
     table = """<div class='relative overflow-x-auto my-div'>
@@ -92,7 +98,7 @@ def dataframe_to_table(dataframe):
         # Style the header row according to the provided CSS class names
         header = '<thead class="table-header"><tr>'
         for column in columns:
-            header += '<th scope="col" class="column-header">'+column+"</th>"
+            header += '<th scope="col" class="column-header">' + column + "</th>"
         header += "</tr></thead>"
         return header
 
@@ -121,9 +127,9 @@ def dataframe_to_table(dataframe):
     table += "</table></div>"
     return table
 
-def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
 
-    name = 'Table'
+def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
+    name = "Table"
     cssclass_idx = " class='ad-has-index'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
@@ -155,7 +161,6 @@ def summarize_obs(variables: pd.DataFrame) -> str:
         The HTML representation of the variables.
     """
     li_items = []
-    li_items.append(f"<li class='ad-var-item'>{summarize_table(variables)}</li>")
     for k in variables:
         assert isinstance(k, str), "Column of dataframe is not a string"
         li_content = summarize_columns(k, variables[k])
@@ -166,12 +171,58 @@ def summarize_obs(variables: pd.DataFrame) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def format_var_obs(adata: anndata.AnnData) -> str:
-    dims_li = "".join(
-        f"<li><span class='ad-has-index'>obs</span>: {adata.n_obs}</li>"
-        f"<li><span class='ad-has-index'>var</span>: {adata.n_vars}</li>"
+def summarize_layer(name: str, layer, is_index: bool = True) -> str:
+    """Summarize a single column of a DataFrame.
+
+    Parameters
+    ----------
+    name : str
+        The name of the column.
+
+    col : pd.Series
+        The column to summarize.
+
+    Returns
+    -------
+    str
+        The HTML representation of the column.
+    """
+    name = escape(str(name))
+    dtype = escape(str(layer.dtype))
+    cssclass_idx = " class='ad-has-index'" if is_index else ""
+
+    # "unique" ids required to expand/collapse subsections
+    attrs_id = "attrs-" + str(uuid.uuid4())
+    data_id = "data-" + str(uuid.uuid4())
+
+    preview = escape(inline_variable_array_repr(layer, 35))
+    attrs_ul = ""  # summarize_attrs(col)
+    data_repr = short_data_repr_html(layer)
+
+    attrs_icon = _icon("icon-file-text2")
+    data_icon = _icon("icon-database")
+
+    return (
+        f"<div class='ad-var-name'><span{cssclass_idx}>{name}</span></div>"
+        f"<div class='ad-var-dims'></div>"
+        f"<div class='ad-var-dtype'>{dtype}</div>"
+        f"<div class='ad-var-preview ad-preview'>{preview}</div>"
+        f"<input id='{attrs_id}' class='ad-var-attrs-in' type='checkbox'>"
+        f"<label for='{attrs_id}' title='Show/Hide attributes'>{attrs_icon}</label>"
+        f"<input id='{data_id}' class='ad-var-data-in' type='checkbox'>"
+        f"<label for='{data_id}' title='Show/Hide data repr'>{data_icon}</label>"
+        f"<div class='ad-var-attrs'>{attrs_ul}</div>"
+        f"<div class='ad-var-data'>{data_repr}</div>"
     )
-    return f"<ul class='ad-dim-list'>{dims_li}</ul>"
+
+
+def summarize_X(adata: anndata.AnnData) -> str:
+    li_items = []
+    for layer_name in adata.layers.keys():
+        li_content = summarize_layer(layer_name, adata.layers[layer_name])
+        li_items.append(f"<li class='ad-var-item'>{li_content}</li>")
+    vars_li = "".join(li_items)
+    return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
 def array_section(X) -> str:
@@ -205,20 +256,33 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     obj_type = f"anndata.{type(adata).__name__}"
     arr_name = ""  # TODO: add somethign here?
 
+    dims_li = "".join(
+        f"<li><span class='ad-has-index'>obs</span>: {adata.n_obs}</li>"
+        f"<li><span class='ad-has-index'>var</span>: {adata.n_vars}</li>"
+    )
+
     header_components = [
         f"<div class='ad-obj-type'>{obj_type}</div>",
         f"<div class='ad-array-name'>{arr_name}</div>",
-        format_var_obs(adata),
+        f"<ul class='ad-dim-list'>{dims_li}</ul>",
     ]
 
     sections = [
         array_section(adata.X),
         collapsible_section(
+            "X",
+            details=summarize_X(adata),
+            items_label="layers",
+            n_items=len(adata.layers),
+            enabled=True,
+            collapsed=True,
+        ),
+        collapsible_section(
             "obs",
             details=summarize_obs(adata.obs),
             n_items=len(adata.obs.columns),
             enabled=True,
-            collapsed=False,
+            collapsed=True,
         ),
         collapsible_section(
             "var",
