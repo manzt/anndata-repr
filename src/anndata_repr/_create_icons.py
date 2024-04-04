@@ -1,6 +1,9 @@
 import math
 import pathlib
 import uuid
+import pandas as pd
+from pyparsing import col
+from anndata_repr._formatting_html import dataframe_to_table
 
 def get_display(adata):
 
@@ -157,7 +160,7 @@ def get_display(adata):
     # COMBINE
     svg = (
         f'<script type="module">{js_content}</script>'
-        f'<svg id={js_contents_id} width={x_total} height={y_total}>'
+        f'<svg id={js_contents_id} width={x_total} height={y_total}> viewBox="0 0 {x_total} {y_total}"'
             f'<defs>'
                 f"{style}"
                 f"{uns_specification}"
@@ -223,3 +226,35 @@ def get_layers(g_name, class_name_front, class_name_back, n_layers, x_base, y_ba
         f'</g>'
     )
     return layers
+
+
+def get_layer_table(adata):
+    #*layer*    *n* *names*
+    # x     1       raw
+    # obsm  3       'X_pca', 'X_tsne', 'X_umap'
+    # obsp  1       distances_all
+
+    list_blocks = []
+
+    if adata.layers: 
+        n_layers = len(adata.layers)
+        names_layers = list(adata.layers)
+        list_blocks.append(['x', n_layers, names_layers])
+
+    for key in ['obsm', 'varm', 'obsp', 'varp']:
+        try: 
+            obj = getattr(adata, key)
+            n_layers = len(obj)
+            if n_layers == 0: 
+                continue
+            names_layers = list(obj)
+            list_blocks.append([key, n_layers, names_layers])
+
+        finally:
+            pass
+
+    df = pd.DataFrame(list_blocks, columns=['layer', 'n', 'names'])
+
+    df_str = dataframe_to_table(df, 100)
+
+    return df_str
