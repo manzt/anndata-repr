@@ -2,7 +2,7 @@ const svg_id = "__REPLACE_ME__"
 
 const svg = document.getElementById(svg_id);
 
-const blocks = svg.querySelectorAll(".block")
+const blocks = svg.querySelectorAll(".ad-block")
 
 
 for (let b of blocks) {

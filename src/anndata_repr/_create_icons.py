@@ -46,10 +46,10 @@ def get_svg(adata):
     size_rows_x, size_cols_x = get_size_x(n_rows_x, n_cols_x, width, height)
 
     # Set default sizing for width/height of additional blocks
-    size_cols_obs = 20
-    size_rows_var = 20
-    size_cols_obsm = 10
-    size_rows_varm = 10
+    size_cols_obs = 40
+    size_rows_var = 40
+    size_cols_obsm = 30
+    size_rows_varm = 30
 
     # X/Y offsets
     x_base_obsp = margin_side
@@ -120,20 +120,20 @@ def get_svg(adata):
 
     # OBS
     obs = (
-        f'<g id="obs" class="block">'
+        f'<g id="obs" class="ad-block">'
             f'<rect class="cls-2" x={x_base_obs} y={y_base} width={size_cols_obs} height={size_rows_x} />'
-            f'<text class="cls-3" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2}>obs</text>'
-            f'<text class="cls-3" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2+10}>{(adata.obs.shape[0], adata.obs.shape[1])}</text>'
+            f'<text class="cls-3" text-anchor="middle" dominant-baseline="middle" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2-10}>obs</text>'
+            f'<text class="cls-3" text-anchor="middle" dominant-baseline="middle" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2+10}>{(adata.obs.shape[0], adata.obs.shape[1])}</text>'
         f'</g>'
     )
 
 
     # VAR
     var = (
-        f'<g id="var" class="block">'
+        f'<g id="var" class="ad-block">'
             f'<rect class="cls-11" x={x_base} y={y_base_var} width={size_cols_x} height={size_rows_var} />'
-            f'<text class="cls-3" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2}>var</text>'
-            f'<text class="cls-3" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2+10}>{(adata.var.shape[0], adata.var.shape[1])}</text>'
+            f'<text text-anchor="middle" dominant-baseline="middle" class="cls-3" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2-10}>var</text>'
+            f'<text text-anchor="middle" dominant-baseline="middle" class="cls-3" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2+10}>{(adata.var.shape[0], adata.var.shape[1])}</text>'
         f'</g>'
     )
 
@@ -176,7 +176,7 @@ def get_svg(adata):
     # COMBINE
     svg = (
         f'<script type="module">{js_content}</script>'
-        f'<svg id={js_contents_id} width={x_total} height={y_total}> viewBox="0 0 {x_total} {y_total}"'
+        f'<svg id={js_contents_id} viewBox="0 0 {x_total} {y_total}"'
             f'<defs>'
                 f"{style}"
                 f"{uns_specification}"
@@ -235,10 +235,10 @@ def get_layers(g_name, class_name_front, class_name_back, n_layers, x_base, y_ba
                 layer_list.append(f'<rect class={class_name_back} x={x_base - i*margin_layer} y={y_base + i*margin_layer} width={width} height={height} />')
         layer_list.append(f'<rect class={class_name_front} x={x_base} y={y_base} width={width} height={height} />')
     layers = (
-        f'<g id={g_name} class="block">'
+        f'<g id={g_name} class="ad-block">'
             f'{"".join(layer_list)}'
-            f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2}>{g_name}</text>'
-            f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2+10}>{shape_text}</text>'
+            f'<text class="cls-3" text-anchor="middle" dominant-baseline="middle" x={x_base + width/2} y={y_base + height/2-10}>{g_name}</text>'
+            f'<text class="cls-3" text-anchor="middle" dominant-baseline="middle" x={x_base + width/2} y={y_base + height/2+10}>{shape_text}</text>'
         f'</g>'
     )
     return layers
