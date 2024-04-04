@@ -221,13 +221,11 @@ def summarize_X(adata: anndata.AnnData) -> str:
 
 
 def array_section(adata) -> str:
-    X = adata.X
     display = get_display(adata)
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
     # TODO: Always use the svg_2d for the preview?
-    preview = svg_2d((tuple((dim,) for dim in X.shape)))
     def convert_newlines_to_br(html_string):
         return html_string.replace('\n', '<br>')
     data_repr = f"<p>{convert_newlines_to_br(adata.__repr__())}</p>"#short_data_repr_html(X)
