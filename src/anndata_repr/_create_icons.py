@@ -76,7 +76,7 @@ def get_svg(adata):
         '''<style>
             .cls-2,.cls-21{fill:#efc41c;}
             .cls-11,.cls-2,.cls-4,.cls-5,.cls-6,.cls-7,.cls-8,.cls-9{stroke:#010101;stroke-miterlimit:10;stroke-width:0.5px;}
-            .cls-3{fill:#fff;}
+            .cls-3{fill:#333;}
             .cls-4{fill:#f15c5a;}
             .cls-5{fill:#965ba5;}
             .cls-6{fill:#194c61;}
@@ -237,7 +237,7 @@ def get_layers(g_name, class_name_front, class_name_back, n_layers, x_base, y_ba
     layers = (
         f'<g id={g_name} class="block">'
             f'{"".join(layer_list)}'
-            f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2}>{g_name}</text>'
+            f'<text class="cls-3" stroke-width={} x={x_base + width/2} y={y_base + height/2}>{g_name}</text>'
             f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2+10}>{shape_text}</text>'
         f'</g>'
     )

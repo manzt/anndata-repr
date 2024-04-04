@@ -228,7 +228,9 @@ def array_section(adata) -> str:
     collapsed = True
     # TODO: Always use the svg_2d for the preview?
     preview = svg_2d((tuple((dim,) for dim in X.shape)))
-    data_repr = short_data_repr_html(X)
+    def convert_newlines_to_br(html_string):
+        return html_string.replace('\n', '<br>')
+    data_repr = f"<p>{convert_newlines_to_br(adata.__repr__())}</p>"#short_data_repr_html(X)
     data_icon = _icon("icon-database")
 
 
