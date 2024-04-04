@@ -176,7 +176,6 @@ def collapsible_section(
     inline_details="",
     details="",
     n_items=None,
-    items_label=None,
     enabled=True,
     collapsed=False,
 ) -> str:
@@ -184,12 +183,7 @@ def collapsible_section(
     data_id = "section-" + str(uuid.uuid4())
 
     has_items = n_items is not None and n_items
-    if has_items:
-        n_items_span = (
-            f" <span>({items_label + ": " if items_label else ""}{n_items})</span>"
-        )
-    else:
-        n_items_span = ""
+    n_items_span = "" if n_items is None else f" <span>({n_items})</span>"
     enabled = "" if enabled and has_items else "disabled"
     collapsed = "" if collapsed or not has_items else "checked"
     tip = " title='Expand/collapse section'" if enabled else ""

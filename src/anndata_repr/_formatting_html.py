@@ -204,7 +204,7 @@ def summarize_layer(name: str, layer, is_index: bool = True) -> str:
 
     return (
         f"<div class='ad-var-name'><span{cssclass_idx}>{name}</span></div>"
-        f"<div class='ad-var-dims'></div>"
+        f"<div class='ad-var-dims'>(X)</div>"
         f"<div class='ad-var-dtype'>{dtype}</div>"
         f"<div class='ad-var-preview ad-preview'>{preview}</div>"
         f"<input id='{attrs_id}' class='ad-var-attrs-in' type='checkbox'>"
@@ -270,9 +270,8 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     sections = [
         array_section(adata.X),
         collapsible_section(
-            "X",
+            "layers",
             details=summarize_X(adata),
-            items_label="layers",
             n_items=len(adata.layers),
             enabled=True,
             collapsed=True,
