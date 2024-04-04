@@ -3,7 +3,7 @@ import pathlib
 import uuid
 import pandas as pd
 from pyparsing import col
-from anndata_repr._formatting_html import dataframe_to_table
+from anndata_repr._formatting_table import dataframe_to_table
 
 def get_display(adata):
     svg = get_svg(adata)
