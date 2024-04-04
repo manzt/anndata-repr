@@ -1,4 +1,6 @@
 import math
+import pathlib
+import uuid
 
 def get_display(adata):
 
@@ -19,21 +21,21 @@ def get_display(adata):
 
     margin_side = 20
     margin_layer = 2
-    margin_blocks = 20
+    margin_blocks = 10
 
     # Get the size of x
     size_rows_x, size_cols_x = get_size_x(n_rows_x, n_cols_x, width, height)
 
     # Set default sizing for width/height of additional blocks
-    size_cols_obs = 10
-    size_rows_var = 10
+    size_cols_obs = 20
+    size_rows_var = 20
     size_cols_obsm = 10
     size_rows_varm = 10
 
     # X/Y offsets
     x_base_obsp = margin_side
-    x_base_obsm = x_base_obsp + size_rows_x + margin_blocks if len(adata.obsp) > 0 else x_base_obsp
-    x_base = x_base_obsm + size_cols_obsm + margin_blocks if len(adata.obsm) > 0 else x_base_obsm
+    x_base_obsm = x_base_obsp + size_rows_x + margin_blocks if n_layers_obsp > 0 else x_base_obsp
+    x_base = x_base_obsm + size_cols_obsm + margin_blocks if n_layers_obsm > 0 else x_base_obsm
     x_base_obs = x_base + size_cols_x + margin_blocks
 
     x_total = x_base_obs + size_cols_obs + margin_side
@@ -41,9 +43,11 @@ def get_display(adata):
     y_base_var = margin_side
     y_base = y_base_var + size_rows_var + margin_blocks
     y_base_varm = y_base + size_rows_x + margin_blocks
-    y_base_varp = y_base_varm + size_rows_varm + margin_blocks if len(adata.varm) > 0 else y_base_varm
+    y_base_varp = y_base_varm + size_rows_varm + margin_blocks if n_layers_varm > 0 else y_base_varm
 
-    y_total = y_base_varp + size_cols_x + margin_side if len(adata.varp) > 0 else y_base_varp + margin_side
+    y_extra = 100 if len(adata.obs) > 0 else 0
+
+    y_total = y_base_varp + size_cols_x + margin_side + y_extra if n_layers_varp > 0 else y_base_varp + margin_side + y_extra
 
 
     # SVG
@@ -83,6 +87,10 @@ def get_display(adata):
         <path id="uns-name-s" d="M54.01543,135.177a.06119.06119,0,0,1-.04541-.01562.12305.12305,0,0,1-.02588-.04.53849.53849,0,0,1-.0166-.05176.27425.27425,0,0,0-.01855-.04883.95758.95758,0,0,0-.165-.15527,1.16635,1.16635,0,0,0-.21826-.12988,1.40357,1.40357,0,0,0-.25293-.08692,1.1324,1.1324,0,0,0-.26563-.03222,1.38254,1.38254,0,0,0-.21582.0166.7157.7157,0,0,0-.18164.05371.339.339,0,0,0-.124.0957.22409.22409,0,0,0-.04492.14356.249.249,0,0,0,.0498.15918.46265.46265,0,0,0,.148.11621,1.586,1.586,0,0,0,.24951.10058c.1001.03125.21875.06446.356.10157a2.22561,2.22561,0,0,1,.92187.44726.84089.84089,0,0,1,.29688.62891.98842.98842,0,0,1-.10547.45117,1.18346,1.18346,0,0,1-.29834.376,1.4596,1.4596,0,0,1-.47022.25976,1.88465,1.88465,0,0,1-.61669.09668,2.316,2.316,0,0,1-.81885-.13867,2.10663,2.10663,0,0,1-.70655-.4502l.4336-.78906a.08722.08722,0,0,1,.0664.05371c.01465.03028.03272.07227.05518.126a.74224.74224,0,0,0,.169.18457,1.53352,1.53352,0,0,0,.24609.16211,1.45508,1.45508,0,0,0,.28369.11621.96614.96614,0,0,0,.28418.043,1.01266,1.01266,0,0,0,.46436-.08692.2768.2768,0,0,0,.16455-.25878.31519.31519,0,0,0-.03711-.15332.40012.40012,0,0,0-.11573-.123.97049.97049,0,0,0-.20751-.10547c-.08545-.03223-.19043-.06738-.315-.10352-.06836-.01855-.13623-.03808-.20361-.05761s-.13525-.043-.20312-.06934a2.16868,2.16868,0,0,1-.3667-.17285,1.20388,1.20388,0,0,1-.27344-.21777.83353.83353,0,0,1-.17139-.27149.94521.94521,0,0,1-.05957-.33887.76563.76563,0,0,1,.10352-.374,1.16939,1.16939,0,0,1,.28613-.33594,1.52974,1.52974,0,0,1,.4375-.24218,1.59669,1.59669,0,0,1,.55762-.09571,1.91722,1.91722,0,0,1,.74219.14063,1.74083,1.74083,0,0,1,.62988.46386Z"/>'''
     )
 
+    # JAVSCRIPT
+    js_content = (pathlib.Path(__file__).parent / "hover_icons.js").read_text(encoding="utf-8")
+    js_contents_id = "svg-" + str(uuid.uuid4())
+    js_content = js_content.replace("__REPLACE_ME__", js_contents_id) # unique id
 
     # X
     x = get_layers("X", "cls-8", "cls-9", n_layers_x, x_base, y_base, margin_layer, size_cols_x, size_rows_x, f'({adata.X.shape[0]}, {adata.X.shape[1]}, {n_layers_x})')
@@ -90,7 +98,7 @@ def get_display(adata):
 
     # OBS
     obs = (
-        f'<g id="obs">'
+        f'<g id="obs" class="block">'
             f'<rect class="cls-2" x={x_base_obs} y={y_base} width={size_cols_obs} height={size_rows_x} />'
             f'<text class="cls-3" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2}>obs</text>'
             f'<text class="cls-3" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2+10}>{(adata.obs.shape[0], adata.obs.shape[1])}</text>'
@@ -100,7 +108,7 @@ def get_display(adata):
 
     # VAR
     var = (
-        f'<g id="var">'
+        f'<g id="var" class="block">'
             f'<rect class="cls-11" x={x_base} y={y_base_var} width={size_cols_x} height={size_rows_var} />'
             f'<text class="cls-3" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2}>var</text>'
             f'<text class="cls-3" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2+10}>{(adata.var.shape[0], adata.var.shape[1])}</text>'
@@ -145,7 +153,8 @@ def get_display(adata):
 
     # COMBINE
     svg = (
-        f'<svg width={x_total} height={y_total}>'
+        f'<script type="module">{js_content}</script>'
+        f'<svg id={js_contents_id} width={x_total} height={y_total}>'
             f'<defs>'
                 f"{style}"
                 f"{uns_specification}"
@@ -159,6 +168,7 @@ def get_display(adata):
                 f'{varm}'
                 f'{varp}'
                 f'{uns}'
+            f'</g>'
         f"</svg>"
     )
 
@@ -203,7 +213,7 @@ def get_layers(g_name, class_name_front, class_name_back, n_layers, x_base, y_ba
                 layer_list.append(f'<rect class={class_name_back} x={x_base - i*margin_layer} y={y_base + i*margin_layer} width={width} height={height} />')
         layer_list.append(f'<rect class={class_name_front} x={x_base} y={y_base} width={width} height={height} />')
     layers = (
-        f'<g id={g_name}>'
+        f'<g id={g_name} class="block">'
             f'{"".join(layer_list)}'
             f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2}>{g_name}</text>'
             f'<text class="cls-3" x={x_base + width/2} y={y_base + height/2+10}>{shape_text}</text>'
