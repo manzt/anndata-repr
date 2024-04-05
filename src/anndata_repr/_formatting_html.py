@@ -6,6 +6,7 @@ from html import escape
 
 
 from ._formatting_dask_svg import svg_3d, svg_2d
+from ._svg import anndata_svg
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
@@ -235,6 +236,7 @@ def array_section(adata: anndata.AnnData) -> str:
         )
     else:
         preview = svg_2d(chunks=(((len(adata.obs),), (len(adata.var),))))
+    preview = anndata_svg(adata)
     data_repr = short_data_repr_html(adata.X)
     data_icon = _icon("icon-database")
 
