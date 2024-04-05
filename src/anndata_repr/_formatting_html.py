@@ -5,7 +5,6 @@ import uuid
 from html import escape
 
 
-from ._formatting_dask_svg import svg_3d, svg_2d
 from ._svg import anndata_svg, _COLORS
 from ._formatting_html_xarray import (
     _icon,
@@ -230,14 +229,8 @@ def array_section(adata: anndata.AnnData) -> str:
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
-    if len(adata.layers) > 1:
-        preview = svg_3d(
-            chunks=((len(adata.layers),), (len(adata.obs),), (len(adata.var),))
-        )
-    else:
-        preview = svg_2d(chunks=(((len(adata.obs),), (len(adata.var),))))
     preview = anndata_svg(adata)
-    data_repr = short_data_repr_html(adata.X)
+    data_repr = f'<pre>{escape(repr(adata))}</pre>'
     data_icon = _icon("icon-database")
 
     return (
