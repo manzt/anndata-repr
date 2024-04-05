@@ -312,14 +312,14 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
         ),
         collapsible_section(
             "obs",
-            details=summarize_obsvar(adata.obs),
+            details=summarize_obsvar(adata.obs, as_df=True),
             n_items=len(adata.obs.columns),
             color=_COLORS["obs"].hover,
             collapsed=True,
         ),
         collapsible_section(
             "var",
-            details=summarize_obsvar(adata.var),
+            details=summarize_obsvar(adata.var, as_df=True),
             n_items=len(adata.var.columns),
             color=_COLORS["var"].hover,
             collapsed=True,
