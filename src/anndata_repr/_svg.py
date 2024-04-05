@@ -1,108 +1,139 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import typing
+import math
 
 if typing.TYPE_CHECKING:
     import anndata
 
-template = """
-<svg xmlns="http://www.w3.org/2000/svg" height="300">
 
-    <text x="140" y="15" font-size="1.0rem" font-weight="400" text-anchor="middle">11505</text>
-
-    <g transform="translate(264, 42)">
-        <text
-            x="-35"
-            y="10"
-            dy="6"
-            font-size="1rem"
-            font-weight="400"
-            text-anchor="middle"
-            transform="rotate(-90, 0, 0)"
-        >
-            2638
-        </text>
-    </g>
-
-    <g transform="translate(42, 20)">
-        <!-- var #2B96C0 -->
-        <rect x="0" y="0" width="200" rx="3" height="20" class="fill-sky-400 hover:fill-sky-500" />
-        <text x="100" y="10" dy="4" font-size="0.8rem" font-weight="200" text-anchor="middle" fill="white">var</text>
-    </g>
-
-    <g transform="translate(42, 42)">
-        <!-- X #50BA6F -->
-        <rect x="0" y="0" width="200" height="70" class="fill-green-400 hover:fill-green-500" />
-        <text x="100" y="35" dy="4" font-size="0.8rem" font-weight="200" text-anchor="middle" fill="white">X</text>
-    </g>
-
-    <g transform="translate(243, 42)">
-        <!-- obs #EFC41B -->
-        <rect x="0" y="0" rx="3" width="20" height="70" class="fill-yellow-400 hover:fill-yellow-500" />
-        <text
-            x="0"
-            y="54"
-            dy="-6"
-            font-size="0.8rem"
-            font-weight="200"
-            text-anchor="middle"
-            fill="white"
-            transform="rotate(-90, 0, 35)"
-        >
-            obs
-        </text>
-    </g>
-
-    <g transform="translate(21, 42)">
-        <!-- obsm #EF9120 -->
-        <rect x="0" y="0" rx="3" width="20" height="70" class="fill-orange-400 hover:fill-orange-500" />
-        <text
-            x="0"
-            y="54"
-            dy="-6"
-            font-size="0.8rem"
-            font-weight="200"
-            text-anchor="middle"
-            fill="white"
-            transform="rotate(-90, 0, 35)"
-        >
-            obsm
-        </text>
-    </g>
-
-    <g transform="translate(0, 42)">
-        <!-- obsp #F15C5A -->
-        <rect x="0" y="0" rx="3" width="20" height="70" class="fill-red-400 hover:fill-red-500" />
-        <text
-            x="0"
-            y="54"
-            dy="-6"
-            font-size="0.8rem"
-            font-weight="200"
-            text-anchor="middle"
-            fill="white"
-            transform="rotate(-90, 0, 35)"
-        >
-            obsp
-        </text>
-    </g>
-
-    <g transform="translate(42, 113)">
-        <!-- varm #1A4C61 -->
-        <rect x="0" y="0" rx="3" width="200" height="20" class="fill-sky-700 hover:fill-sky-900" />
-        <text x="100" y="10" dy="4" font-size="0.8rem" font-weight="200" text-anchor="middle" fill="white">varm</text>
-    </g>
-
-    <g transform="translate(42, 134)">
-        <!-- varp #965BA5 -->
-        <rect x="0" y="0" rx="3" width="200" height="20" class="fill-purple-400 hover:fill-purple-500" />
-        <text x="100" y="10" dy="4" font-size="0.8rem" font-weight="200" text-anchor="middle" fill="white">varp</text>
-    </g>
-
-</svg>
-"""
+@dataclass
+class Color:
+    primary: str
+    hover: str
 
 
-def anndata_svg(adata: anndata.AnnData) -> str:
-    shape = (adata.n_obs, adata.n_vars)
-    return template
+_COLORS = {
+    "X": Color("#34d399", "#10b981"),  # green
+    "var": Color("#38bdf8", "#0ea5e9"),  # sky blue
+    "obs": Color("#facc15", "#eab308"),  # yellow
+    "obsm": Color("#fb923c", "#f97316"),  # orange
+    "obsp": Color("#f87171", "#ef4444"),  # red
+    "varm": Color("#0369a1", "#0c4a6e"),  # dark sky blue
+    "varp": Color("#c084fc", "#a855f7"),  # purple
+}
+
+
+def ratio_response(x: float):
+    """How we display actual size ratios
+
+    Common ratios in sizes span several orders of magnitude,
+    which is hard for us to perceive.
+
+    We keep ratios in the 1-3 range accurate, and then apply a logarithm to
+    values up until about 100 or so, at which point we stop scaling.
+    """
+    if x < math.e:
+        return x
+    elif x <= 100:
+        return math.log(x + 12.4)  # f(e) == e
+    else:
+        return math.log(100 + 12.4)
+
+
+def draw_sizes(shape: tuple[int, ...], size: int):
+    """Get size in pixels for all dimensions"""
+    mx = max(shape)
+    ratios = [mx / max(0.1, d) for d in shape]
+    ratios = [ratio_response(r) for r in ratios]
+    return tuple(size / r for r in ratios)
+
+
+def style_tag():
+    def hover_colors():
+        for name, color in _COLORS.items():
+            yield f"""
+            #{name}:hover {{
+                fill: {color.hover};
+            }}
+            """
+
+    styles = [
+        "<style>",
+        "rect { cursor: pointer; }",
+        "text { pointer-events: none; }",
+        *hover_colors(),
+        "</style>",
+    ]
+    return "\n".join(styles)
+
+
+def anndata_svg(
+    adata: anndata.AnnData, size: int = 200, spacing: int = 1, handle_size: int = 15
+) -> str:
+    h, w = draw_sizes(shape=(adata.n_obs, adata.n_vars), size=size)
+    total_width = w + (handle_size + spacing) * 4
+    total_height = h + (handle_size + spacing) * 4
+
+    dim_text_style = 'font-size="1.0em" font-weight="400" text-anchor="middle"'
+    dim_text_style_h = f'{dim_text_style} dy="0.4em"'
+    dim_text_style_v = f'{dim_text_style} dy="0.4em" transform="rotate(-90, {handle_size / 2 }, {h / 2})"'
+
+    handle_text_style = (
+        'font-size="0.8em" font-weight="200" text-anchor="middle" fill="white"'
+    )
+    handle_text_style_h = f'{handle_text_style} dy="0.4em"'
+    handle_text_style_v = f'{handle_text_style} dy="0.3em" transform="rotate(-90, {handle_size / 2}, {h / 2})"'
+    rx = 3
+
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{total_height}" shape-rendering="crispEdges" text-rendering="geometricPrecision">',
+        "<!-- n_vars -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, 0)">'
+        f'<text x="{w / 2}" y="{handle_size / 2}" {dim_text_style_h}>{adata.n_vars}</text>',
+        "</g>",
+        "<!-- var -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, {handle_size + spacing})">'
+        f'<rect id="var" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["var"].primary}" />',
+        f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>var</text>',
+        "</g>",
+        "<!-- X -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 2})">'
+        f'<rect id="X" width="{w}" height="{h}" rx={rx} fill="{_COLORS["X"].primary}" />',
+        f'<text x="{w / 2}" y="{h / 2}" {handle_text_style_h}>X</text>',
+        "</g>",
+        "<!-- varm -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 2 + (h + spacing)})">'
+        f'<rect id="varm" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["varm"].primary}" />',
+        f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>varm</text>',
+        "</g>",
+        "<!-- varp -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 3 + (h + spacing)})">'
+        f'<rect id="varp" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["varp"].primary}" />',
+        f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>varp</text>',
+        "</g>",
+        "<!-- obsp -->",
+        f'<g transform="translate(0, {(handle_size + spacing) * 2})">'
+        f'<rect id="obsp" width="{handle_size}" height="{h}" rx={rx} fill="{_COLORS["obsp"].primary}" />',
+        f'<text x="{handle_size / 2}" y="{h / 2}" {handle_text_style_v}>obsp</text>',
+        "</g>",
+        "<!-- obsm -->",
+        f'<g transform="translate({handle_size + spacing}, {(handle_size + spacing) * 2})">'
+        f'<rect id="obsm" width="{handle_size}" height="{h}" rx={rx} fill="{_COLORS["obsm"].primary}" />',
+        f'<text x="{handle_size / 2}" y="{h / 2}" {handle_text_style_v}>obsm</text>',
+        "</g>",
+        "<!-- obs -->",
+        f'<g transform="translate({(handle_size + spacing) * 2 + w + spacing}, {(handle_size + spacing) * 2})">'
+        f'<rect id="obs" width="{handle_size}" height="{h}" rx={rx} fill="{_COLORS["obs"].primary}" />',
+        f'<text x="{handle_size / 2}" y="{h / 2}" {handle_text_style_v}>obs</text>',
+        "</g>",
+        "<!-- n_obs -->",
+        f'<g transform="translate({(handle_size + spacing) * 3 + w + spacing}, {(handle_size + spacing) * 2})">'
+        f'<text x="{handle_size / 2}" y="{h / 2}" {dim_text_style_v}>{adata.n_obs}</text>',
+        "</g>",
+        style_tag(),
+        "</svg>",
+    ]
+
+    return "\n".join(svg)

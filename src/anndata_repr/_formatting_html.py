@@ -6,7 +6,7 @@ from html import escape
 
 
 from ._formatting_dask_svg import svg_3d, svg_2d
-from ._svg import anndata_svg
+from ._svg import anndata_svg, _COLORS
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
@@ -314,24 +314,28 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             "layers",
             details=summarize_X(adata),
             n_items=len(adata.layers),
+            color=_COLORS["X"].hover,
             collapsed=True,
         ),
         collapsible_section(
             "obs",
             details=summarize_obsvar(adata.obs),
             n_items=len(adata.obs.columns),
+            color=_COLORS["obs"].hover,
             collapsed=True,
         ),
         collapsible_section(
             "var",
             details=summarize_obsvar(adata.var),
             n_items=len(adata.var.columns),
+            color=_COLORS["var"].hover,
             collapsed=True,
         ),
         collapsible_section(
             "obsm",
             details=summarize_arrays(adata.obsm),
             n_items=len(adata.obsm),
+            color=_COLORS["obsm"].hover,
             collapsed=True,
         )
         if len(adata.obsm)
@@ -340,6 +344,7 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             "obsp",
             details=summarize_arrays(adata.obsp),
             n_items=len(adata.obsp),
+            color=_COLORS["obsp"].hover,
             collapsed=True,
         )
         if len(adata.obsp)
@@ -348,6 +353,7 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             "varm",
             details=summarize_arrays(adata.varm),
             n_items=len(adata.varm),
+            color=_COLORS["varm"].hover,
             collapsed=True,
         )
         if len(adata.varm)
@@ -356,6 +362,7 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             "varp",
             details=summarize_arrays(adata.varp),
             n_items=len(adata.varp),
+            color=_COLORS["varp"].hover,
             collapsed=True,
         )
         if len(adata.varp)

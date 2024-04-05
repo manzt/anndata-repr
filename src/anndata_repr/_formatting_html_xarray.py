@@ -173,24 +173,25 @@ def _icon(icon_name) -> str:
 
 def collapsible_section(
     name,
-    inline_details="",
-    details="",
-    n_items=None,
-    enabled=True,
-    collapsed=False,
+    inline_details: str = "",
+    details: str = "",
+    n_items: int | None = None,
+    enabled: bool = True,
+    collapsed: bool = False,
+    color: str = "inherit",
 ) -> str:
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
 
     has_items = n_items is not None and n_items
     n_items_span = "" if n_items is None else f" <span>({n_items})</span>"
-    enabled = "" if enabled and has_items else "disabled"
-    collapsed = "" if collapsed or not has_items else "checked"
+    enabled_str = "" if enabled and has_items else "disabled"
+    collapsed_str = "" if collapsed or not has_items else "checked"
     tip = " title='Expand/collapse section'" if enabled else ""
 
     return (
-        f"<input id='{data_id}' class='ad-section-summary-in' "
-        f"type='checkbox' {enabled} {collapsed}>"
+        f"<input id='{data_id}' class='ad-section-summary-in'"
+        f"type='checkbox' {enabled_str} {collapsed_str}>"
         f"<label for='{data_id}' class='ad-section-summary' {tip}>"
         f"{name}:{n_items_span}</label>"
         f"<div class='ad-section-inline-details'>{inline_details}</div>"
