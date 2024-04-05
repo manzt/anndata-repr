@@ -5,7 +5,7 @@ import uuid
 from html import escape
 
 
-from ._formatting_dask_svg import svg_2d
+from ._formatting_dask_svg import svg_3d, svg_2d
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
@@ -151,7 +151,7 @@ def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
     )
 
 
-def summarize_obsvar(obsvar: pd.DataFrame) -> str:
+def summarize_obsvar(obsvar: pd.DataFrame, as_df: bool = True) -> str:
     """Summarize the obs or var DataFrame.
 
     Parameters
@@ -164,7 +164,11 @@ def summarize_obsvar(obsvar: pd.DataFrame) -> str:
     str
         The HTML representation of the variables.
     """
+    if as_df:
+        return obsvar._repr_html_()
+
     li_items = []
+
     for k in obsvar:
         assert isinstance(k, str), "Column of dataframe is not a string"
         li_content = summarize_columns(k, obsvar[k])
@@ -221,13 +225,17 @@ def summarize_X(adata: anndata.AnnData) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def array_section(X) -> str:
+def array_section(adata: anndata.AnnData) -> str:
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
-    # TODO: Always use the svg_2d for the preview?
-    preview = svg_2d((tuple((dim,) for dim in X.shape)))
-    data_repr = short_data_repr_html(X)
+    if len(adata.layers) > 1:
+        preview = svg_3d(
+            chunks=((len(adata.layers),), (len(adata.obs),), (len(adata.var),))
+        )
+    else:
+        preview = svg_2d(chunks=(((len(adata.obs),), (len(adata.var),))))
+    data_repr = short_data_repr_html(adata.X)
     data_icon = _icon("icon-database")
 
     return (
@@ -299,7 +307,7 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     ]
 
     sections = [
-        array_section(adata.X),
+        array_section(adata),
         collapsible_section(
             "layers",
             details=summarize_X(adata),
