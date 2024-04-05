@@ -42,6 +42,16 @@ def ratio_response(x: float):
         return math.log(100 + 12.4)
 
 
+def uns():
+    return """
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-braces">
+    
+<path d="m8 3h7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/>
+<path d="m16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2v5a2 2 0 0 0-2-2h-1"/>
+</svg>
+    """
+
+
 def draw_sizes(shape: tuple[int, ...], size: int):
     """Get size in pixels for all dimensions"""
     mx = max(shape)
@@ -61,8 +71,8 @@ def style_tag():
 
     styles = [
         "<style>",
-        "rect { cursor: pointer; }",
         "text { pointer-events: none; }",
+        "rect { cursor: pointer; }",
         *hover_colors(),
         "</style>",
     ]
@@ -88,45 +98,50 @@ def anndata_svg(
     rx = 3
 
     svg = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{total_height}" shape-rendering="crispEdges" text-rendering="geometricPrecision">',
+        f'<svg class="ad-svg" xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{total_height}" shape-rendering="crispEdges" text-rendering="geometricPrecision" tabindex="0">',
         "<!-- n_vars -->",
         f'<g transform="translate({(handle_size + spacing) * 2}, 0)">'
         f'<text x="{w / 2}" y="{handle_size / 2}" {dim_text_style_h}>{adata.n_vars}</text>',
         "</g>",
         "<!-- var -->",
-        f'<g transform="translate({(handle_size + spacing) * 2}, {handle_size + spacing})">'
+        f'<g transform="translate({(handle_size + spacing) * 2}, {handle_size + spacing})" role="button">'
         f'<rect id="var" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["var"].primary}" />',
         f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>var</text>',
         "</g>",
-        "<!-- X -->",
-        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 2})">'
-        f'<rect id="X" width="{w}" height="{h}" rx={rx} fill="{_COLORS["X"].primary}" />',
-        f'<text x="{w / 2}" y="{h / 2}" {handle_text_style_h}>X</text>',
-        "</g>",
-        "<!-- varm -->",
-        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 2 + (h + spacing)})">'
-        f'<rect id="varm" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["varm"].primary}" />',
-        f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>varm</text>',
-        "</g>",
-        "<!-- varp -->",
-        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 3 + (h + spacing)})">'
-        f'<rect id="varp" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["varp"].primary}" />',
-        f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>varp</text>',
-        "</g>",
         "<!-- obsp -->",
-        f'<g transform="translate(0, {(handle_size + spacing) * 2})">'
+        f'<g transform="translate(0, {(handle_size + spacing) * 2})" role="button">'
         f'<rect id="obsp" width="{handle_size}" height="{h}" rx={rx} fill="{_COLORS["obsp"].primary}" />',
         f'<text x="{handle_size / 2}" y="{h / 2}" {handle_text_style_v}>obsp</text>',
         "</g>",
         "<!-- obsm -->",
-        f'<g transform="translate({handle_size + spacing}, {(handle_size + spacing) * 2})">'
+        f'<g transform="translate({handle_size + spacing}, {(handle_size + spacing) * 2})" role="button">'
         f'<rect id="obsm" width="{handle_size}" height="{h}" rx={rx} fill="{_COLORS["obsm"].primary}" />',
         f'<text x="{handle_size / 2}" y="{h / 2}" {handle_text_style_v}>obsm</text>',
         "</g>",
+        "<!-- X -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 2})" role="button">'
+        f'<rect id="X" width="{w}" height="{h}" rx={rx} fill="{_COLORS["X"].primary}" />',
+        f'<text x="{w / 2}" y="{h / 2}" {handle_text_style_h}>X</text>',
+        "</g>",
         "<!-- obs -->",
-        f'<g transform="translate({(handle_size + spacing) * 2 + w + spacing}, {(handle_size + spacing) * 2})">'
+        f'<g transform="translate({(handle_size + spacing) * 2 + w + spacing}, {(handle_size + spacing) * 2})" role="button">'
         f'<rect id="obs" width="{handle_size}" height="{h}" rx={rx} fill="{_COLORS["obs"].primary}" />',
         f'<text x="{handle_size / 2}" y="{h / 2}" {handle_text_style_v}>obs</text>',
+        "</g>",
+        "<!-- varm -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 2 + (h + spacing)})" role="button">'
+        f'<rect id="varm" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["varm"].primary}" />',
+        f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>varm</text>',
+        "</g>",
+        "<!-- varp -->",
+        f'<g transform="translate({(handle_size + spacing) * 2}, {(handle_size + spacing) * 3 + (h + spacing)})" role="button">'
+        f'<rect id="varp" width="{w}" height="{handle_size}" rx={rx} fill="{_COLORS["varp"].primary}" />',
+        f'<text x="{w / 2}" y="{handle_size / 2}" {handle_text_style_h}>varp</text>',
+        "</g>",
+        "<!-- uns -->",
+        f'<g transform="translate(0, {(handle_size + spacing) * 2 + (h + spacing)})" role="button">'
+        f'<rect id="uns" width="{(handle_size * 2) + spacing}" height="{(handle_size * 2) + spacing}" rx={rx} fill="transparent" />',
+        f'<text x="{handle_size + spacing}" y="{handle_size + spacing}" dx="-0.1em" dy="0.25em" {dim_text_style}>{{uns}}</text>'
         "</g>",
         "<!-- n_obs -->",
         f'<g transform="translate({(handle_size + spacing) * 3 + w + spacing}, {(handle_size + spacing) * 2})">'
