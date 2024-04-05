@@ -17,6 +17,7 @@ for (let grp of svg.querySelectorAll("g")) {
   let fill = grp.querySelector("rect").getAttribute("fill");
 
   grp.addEventListener("mouseenter", () => {
+    if (fill === "transparent") return;
     label.style.color = fill;
   });
 
@@ -25,6 +26,8 @@ for (let grp of svg.querySelectorAll("g")) {
   });
 
   grp.addEventListener("click", () => {
-    input.checked = !input.checked;
+    if (!input.disabled) {
+      input.checked = !input.checked;
+    }
   });
 }

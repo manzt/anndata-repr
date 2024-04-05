@@ -330,44 +330,34 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             n_items=len(adata.obsm),
             color=_COLORS["obsm"].hover,
             collapsed=True,
-        )
-        if len(adata.obsm)
-        else "",
+        ),
         collapsible_section(
             "obsp",
             details=summarize_arrays(adata.obsp),
             n_items=len(adata.obsp),
             color=_COLORS["obsp"].hover,
             collapsed=True,
-        )
-        if len(adata.obsp)
-        else "",
+        ),
         collapsible_section(
             "varm",
             details=summarize_arrays(adata.varm),
             n_items=len(adata.varm),
             color=_COLORS["varm"].hover,
             collapsed=True,
-        )
-        if len(adata.varm)
-        else "",
+        ),
         collapsible_section(
             "varp",
             details=summarize_arrays(adata.varp),
             n_items=len(adata.varp),
             color=_COLORS["varp"].hover,
             collapsed=True,
-        )
-        if len(adata.varp)
-        else "",
+        ),
         collapsible_section(
             "uns",
             details=summaize_uns(adata.uns),
             n_items=len(adata.uns),
             collapsed=True,
-        )
-        if len(adata.uns)
-        else "",
+        ),
     ]
 
     return _obj_repr(adata, header_components, sections)
