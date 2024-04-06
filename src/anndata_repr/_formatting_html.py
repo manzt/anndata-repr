@@ -110,7 +110,7 @@ def dataframe_to_table(dataframe, max_len=10):
 
     def make_row(row, index, max_len):
         # Style each row according to the provided CSS class names, alternating row color not implemented in CSS
-        row_html = f'<tr class="table-row">'
+        row_html = '<tr class="table-row">'
         for value in row:
             row_html += (
                 f'<td class="table-cell">{make_truncated_data(value, max_len)}</td>'
@@ -241,7 +241,7 @@ def array_section(adata: anndata.AnnData) -> str:
     )
 
 
-def summaize_uns(uns: dict) -> str:
+def summaize_uns(uns: typing.MutableMapping) -> str:
     li_items = []
 
     attrs_icon = _icon("icon-file-text2")
