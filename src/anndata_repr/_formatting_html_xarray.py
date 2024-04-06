@@ -179,7 +179,6 @@ def collapsible_section(
     n_items: int | None = None,
     enabled: bool = True,
     collapsed: bool = False,
-    color: str = "inherit",
 ) -> str:
     # "unique" id to expand/collapse the section
     data_id = "section-name" + str(uuid.uuid4())
