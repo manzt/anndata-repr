@@ -1,12 +1,10 @@
 import math
 import pathlib
-import uuid
 import pandas as pd
-from pyparsing import col
 from anndata_repr._formatting_table import dataframe_to_table
 
-def get_display(adata,unique_name):
-    svg = get_svg(adata,unique_name)
+def get_display(adata):
+    svg = get_svg(adata)
     table = get_layer_table(adata)
     css_content = (pathlib.Path(__file__).parent / "static/style.css").read_text(encoding="utf-8")
 
@@ -21,7 +19,7 @@ def get_display(adata,unique_name):
     return display
 
 
-def get_svg(adata,unique_name):
+def get_svg(adata):
 
     # SIZING
     width = 1000
@@ -97,14 +95,8 @@ def get_svg(adata,unique_name):
         </style>'''
     )
 
-    # JAVSCRIPT
-    js_content = (pathlib.Path(__file__).parent / "hover_icons.js").read_text(encoding="utf-8")
-    js_contents_id = unique_name #"" + str(uuid.uuid4())
-    js_content = js_content.replace("__REPLACE_ME__", str(js_contents_id)) # unique id
-
     # X
     x = get_layers("X", "cls-8", "cls-9", n_layers_x, x_base, y_base, margin_layer, size_cols_x, size_rows_x, f'({adata.X.shape[0]}, {adata.X.shape[1]}, {n_layers_x})')
-
 
     # OBS
     obs = (
@@ -160,8 +152,7 @@ def get_svg(adata,unique_name):
 
     # COMBINE
     svg = (
-        f'<script type="module">{js_content}</script>'
-        f'<svg id=svg_{js_contents_id} viewBox="0 0 {x_total} {y_total}"'
+        f'<svg class="adata-overview" viewBox="0 0 {x_total} {y_total}"'
             f'<defs>'
                 f"{style}"
                 f"{uns}"

@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import typing
 import uuid
 from html import escape
+from anndata_repr._create_icons import get_display
 
+from anndata_repr._formatting_table import dataframe_to_table
 
-from ._svg import anndata_svg
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
@@ -88,47 +91,6 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     )
 
 
-def dataframe_to_table(dataframe, max_len=10):
-    # Initialize the table with the correct class names for styling
-    table = """<div class='relative overflow-x-auto my-div'>
-    <table class="">
-    """
-
-    def make_header(columns):
-        # Style the header row according to the provided CSS class names
-        header = '<thead class="table-header"><tr>'
-        for column in columns:
-            header += '<th scope="col" class="column-header">' + column + "</th>"
-        header += "</tr></thead>"
-        return header
-
-    def make_truncated_data(data, max_len):
-        # Function to truncate data if it's longer than 10 characters
-        if len(str(data)) > max_len:
-            return str(data)[:max_len] + "..."
-        return str(data)
-
-    def make_row(row, index, max_len):
-        # Style each row according to the provided CSS class names, alternating row color not implemented in CSS
-        row_html = '<tr class="table-row">'
-        for value in row:
-            row_html += (
-                f'<td class="table-cell">{make_truncated_data(value, max_len)}</td>'
-            )
-        row_html += "</tr>"
-        return row_html
-
-    # Construct the table header
-    table += make_header(dataframe.columns)
-
-    # Construct each row of the table
-    for index, row in enumerate(dataframe.itertuples(index=False), start=1):
-        table += make_row(row, index, max_len)
-
-    # Close the table and div tags
-    table += "</table></div>"
-    return table
-
 
 def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
     name = "Table"
@@ -149,7 +111,7 @@ def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
     )
 
 
-def summarize_obsvar(obsvar: pd.DataFrame, as_df: bool = True) -> str:
+def summarize_obsvar(obsvar: pd.DataFrame) -> str:
     """Summarize the obs or var DataFrame.
 
     Parameters
@@ -162,11 +124,7 @@ def summarize_obsvar(obsvar: pd.DataFrame, as_df: bool = True) -> str:
     str
         The HTML representation of the variables.
     """
-    if as_df:
-        return obsvar._repr_html_()
-
     li_items = []
-
     for k in obsvar:
         assert isinstance(k, str), "Column of dataframe is not a string"
         li_content = summarize_columns(k, obsvar[k])
@@ -223,19 +181,21 @@ def summarize_X(adata: anndata.AnnData) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def array_section(adata: anndata.AnnData) -> str:
+def array_section(adata) -> str:
+    display = get_display(adata)
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
-    preview = anndata_svg(adata)
-    data_repr = f'<pre>{escape(repr(adata))}</pre>'
+    def convert_newlines_to_br(html_string):
+        return html_string.replace('\n', '<br>')
+    data_repr = f"<p>{convert_newlines_to_br(adata.__repr__())}</p>"#short_data_repr_html(X)
     data_icon = _icon("icon-database")
 
     return (
-        "<div class='ad-array-wrap'>"
+        "<div class='ad-array-wrap version3'>"
         f"<input id='{data_id}' class='ad-array-in' type='checkbox' {collapsed}>"
         f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
-        f"<div class='ad-array-preview ad-preview'><span>{preview}</span></div>"
+        f"<div class='ad-array-preview ad-preview'><span>{display}</span></div>"
         f"<div class='ad-array-data'>{data_repr}</div>"
         "</div>"
     )
@@ -286,7 +246,6 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
 
     """
     obj_type = f"anndata.{type(adata).__name__}"
-    arr_name = ""  # TODO: add somethign here?
 
     dims_li = "".join(
         f"<li><span class='ad-has-index'>obs</span>: {adata.n_obs}</li>"
@@ -295,7 +254,6 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
 
     header_components = [
         f"<div class='ad-obj-type'>{obj_type}</div>",
-        f"<div class='ad-array-name'>{arr_name}</div>",
         f"<ul class='ad-dim-list'>{dims_li}</ul>",
     ]
 
@@ -309,13 +267,13 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
         ),
         collapsible_section(
             "obs",
-            details=summarize_obsvar(adata.obs, as_df=True),
+            details=summarize_obsvar(adata.obs),
             n_items=len(adata.obs.columns),
             collapsed=True,
         ),
         collapsible_section(
             "var",
-            details=summarize_obsvar(adata.var, as_df=True),
+            details=summarize_obsvar(adata.var),
             n_items=len(adata.var.columns),
             collapsed=True,
         ),
@@ -324,31 +282,41 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             details=summarize_arrays(adata.obsm),
             n_items=len(adata.obsm),
             collapsed=True,
-        ),
+        )
+        if len(adata.obsm)
+        else "",
         collapsible_section(
             "obsp",
             details=summarize_arrays(adata.obsp),
             n_items=len(adata.obsp),
             collapsed=True,
-        ),
+        )
+        if len(adata.obsp)
+        else "",
         collapsible_section(
             "varm",
             details=summarize_arrays(adata.varm),
             n_items=len(adata.varm),
             collapsed=True,
-        ),
+        )
+        if len(adata.varm)
+        else "",
         collapsible_section(
             "varp",
             details=summarize_arrays(adata.varp),
             n_items=len(adata.varp),
             collapsed=True,
-        ),
+        )
+        if len(adata.varp)
+        else "",
         collapsible_section(
             "uns",
             details=summaize_uns(adata.uns),
             n_items=len(adata.uns),
             collapsed=True,
-        ),
+        )
+        if len(adata.uns)
+        else "",
     ]
 
     return _obj_repr(adata, header_components, sections)

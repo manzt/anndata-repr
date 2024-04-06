@@ -1,33 +1,37 @@
-let root = document.getElementById("__ID__");
+function main() {
+  let root = document.getElementById("__ID__");
+  let svg = root.querySelector(".ad-svg");
+  if (!svg) return;
 
-let sections = {};
-for (let section of root.querySelectorAll(".ad-section-item")) {
-  let input = section.querySelector("input[type=checkbox]");
-  let name = input?.dataset?.anndata;
-  if (!name) continue;
-  sections[name] = input;
+  let sections = {};
+  for (let section of root.querySelectorAll(".ad-section-item")) {
+    let input = section.querySelector("input[type=checkbox]");
+    let name = input?.dataset?.anndata;
+    if (!name) continue;
+    sections[name] = input;
+  }
+
+  for (let grp of svg.querySelectorAll("g")) {
+    let id = grp?.firstChild?.id;
+    let input = sections[id === "X" ? "layers" : id];
+    if (!input) continue;
+    let label = input.nextElementSibling;
+    let fill = grp.querySelector("rect").getAttribute("fill");
+
+    grp.addEventListener("mouseenter", () => {
+      if (fill === "transparent") return;
+      label.style.color = fill;
+    });
+
+    grp.addEventListener("mouseleave", () => {
+      label.style.color = "";
+    });
+
+    grp.addEventListener("click", () => {
+      if (!input.disabled) {
+        input.checked = !input.checked;
+      }
+    });
+  }
 }
-
-let svg = root.querySelector(".ad-svg");
-for (let grp of svg.querySelectorAll("g")) {
-  let id = grp?.firstChild?.id;
-  let input = sections[id === "X" ? "layers" : id];
-  if (!input) continue;
-  let label = input.nextElementSibling;
-  let fill = grp.querySelector("rect").getAttribute("fill");
-
-  grp.addEventListener("mouseenter", () => {
-    if (fill === "transparent") return;
-    label.style.color = fill;
-  });
-
-  grp.addEventListener("mouseleave", () => {
-    label.style.color = "";
-  });
-
-  grp.addEventListener("click", () => {
-    if (!input.disabled) {
-      input.checked = !input.checked;
-    }
-  });
-}
+main();
