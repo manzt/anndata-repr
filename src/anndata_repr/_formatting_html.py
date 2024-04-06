@@ -3,10 +3,9 @@ from __future__ import annotations
 import typing
 import uuid
 from html import escape
-from anndata_repr._create_icons import get_display
+from functools import partial
 
-from anndata_repr._formatting_table import dataframe_to_table
-
+from ._svg import anndata_svg
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
@@ -14,13 +13,15 @@ from ._formatting_html_xarray import (
     short_data_repr_html,
     inline_variable_array_repr,
 )
+from ._create_icons import get_display
+from ._formatting_table import dataframe_to_table
 import pandas as pd
 
 if typing.TYPE_CHECKING:
     import anndata
     from anndata._core.aligned_mapping import PairwiseArraysBase, AxisArraysBase
 
-__all__ = ["format_anndata_html"]
+__all__ = ["format_anndata_html_compact", "format_anndata_html_complete"]
 
 
 def summarize_series(obj: pd.Series) -> str:
@@ -89,7 +90,6 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
         f"<div class='ad-var-attrs'>{attrs_ul}</div>"
         f"<div class='ad-var-data'>{data_repr}</div>"
     )
-
 
 
 def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
@@ -181,21 +181,21 @@ def summarize_X(adata: anndata.AnnData) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def array_section(adata) -> str:
-    display = get_display(adata)
+def array_section(
+    adata: anndata.AnnData,
+    render_preview: typing.Callable[[anndata.AnnData], str],
+) -> str:
+    preview = render_preview(adata)
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
     collapsed = True
-    def convert_newlines_to_br(html_string):
-        return html_string.replace('\n', '<br>')
-    data_repr = f"<p>{convert_newlines_to_br(adata.__repr__())}</p>"#short_data_repr_html(X)
+    data_repr = f"<pre>{escape(repr(adata))}</pre>"
     data_icon = _icon("icon-database")
-
     return (
         "<div class='ad-array-wrap version3'>"
         f"<input id='{data_id}' class='ad-array-in' type='checkbox' {collapsed}>"
         f"<label for='{data_id}' title='Show/hide data repr'>{data_icon}</label>"
-        f"<div class='ad-array-preview ad-preview'><span>{display}</span></div>"
+        f"<div class='ad-array-preview ad-preview'><span>{preview}</span></div>"
         f"<div class='ad-array-data'>{data_repr}</div>"
         "</div>"
     )
@@ -236,7 +236,10 @@ def summaize_uns(uns: typing.MutableMapping) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def format_anndata_html(adata: anndata.AnnData) -> str:
+def format_anndata_html(
+    adata: anndata.AnnData,
+    render_preview: typing.Callable[[anndata.AnnData], str],
+) -> str:
     """Format an AnnData object as an HTML string.
 
     Parameters
@@ -244,6 +247,13 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     adata : anndata.AnnData
         The AnnData object to format.
 
+    render_preview : Callable[[anndata.AnnData], str]
+        A function that renders an SVG preview of the object.
+
+    Returns
+    -------
+    str
+        The HTML representation of the AnnData object.
     """
     obj_type = f"anndata.{type(adata).__name__}"
 
@@ -258,7 +268,7 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     ]
 
     sections = [
-        array_section(adata),
+        array_section(adata, render_preview=render_preview),
         collapsible_section(
             "layers",
             details=summarize_X(adata),
@@ -282,41 +292,35 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
             details=summarize_arrays(adata.obsm),
             n_items=len(adata.obsm),
             collapsed=True,
-        )
-        if len(adata.obsm)
-        else "",
+        ),
         collapsible_section(
             "obsp",
             details=summarize_arrays(adata.obsp),
             n_items=len(adata.obsp),
             collapsed=True,
-        )
-        if len(adata.obsp)
-        else "",
+        ),
         collapsible_section(
             "varm",
             details=summarize_arrays(adata.varm),
             n_items=len(adata.varm),
             collapsed=True,
-        )
-        if len(adata.varm)
-        else "",
+        ),
         collapsible_section(
             "varp",
             details=summarize_arrays(adata.varp),
             n_items=len(adata.varp),
             collapsed=True,
-        )
-        if len(adata.varp)
-        else "",
+        ),
         collapsible_section(
             "uns",
             details=summaize_uns(adata.uns),
             n_items=len(adata.uns),
             collapsed=True,
-        )
-        if len(adata.uns)
-        else "",
+        ),
     ]
 
     return _obj_repr(adata, header_components, sections)
+
+
+format_anndata_html_complete = partial(format_anndata_html, render_preview=get_display)
+format_anndata_html_compact = partial(format_anndata_html, render_preview=anndata_svg)
