@@ -14,13 +14,11 @@ import uuid
 from datetime import datetime, timedelta
 from functools import lru_cache
 from html import escape
-from importlib.resources import files
 from itertools import chain, zip_longest
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 
 if typing.TYPE_CHECKING:
     duckarray = typing.Any
@@ -144,13 +142,15 @@ STATIC_FILES = (
 )
 
 
-@lru_cache(None)
-def _load_static_files() -> tuple[str, str]:
+# @lru_cache(None)
+def _load_static_files() -> tuple[str, str, str, str]:
     """Lazily load the resource files into memory the first time they are needed"""
     static_files = Path(__file__).parent / "static"
     return (
         (static_files / "icons-svg-inline.html").read_text(encoding="utf-8"),
         (static_files / "style.css").read_text(encoding="utf-8"),
+        (static_files / "script.js").read_text(encoding="utf-8"),
+        (static_files / "hover_icons.js").read_text(encoding="utf-8"),
     )
 
 
@@ -173,24 +173,24 @@ def _icon(icon_name) -> str:
 
 def collapsible_section(
     name,
-    inline_details="",
-    details="",
-    n_items=None,
-    enabled=True,
-    collapsed=False,
+    inline_details: str = "",
+    details: str = "",
+    n_items: int | None = None,
+    enabled: bool = True,
+    collapsed: bool = False,
 ) -> str:
     # "unique" id to expand/collapse the section
-    data_id = "section-" + str(uuid.uuid4())
+    data_id = "section-name" + str(uuid.uuid4())
 
     has_items = n_items is not None and n_items
     n_items_span = "" if n_items is None else f" <span>({n_items})</span>"
-    enabled = "" if enabled and has_items else "disabled"
-    collapsed = "" if collapsed or not has_items else "checked"
+    enabled_str = "" if enabled and has_items else "disabled"
+    collapsed_str = "" if collapsed or not has_items else "checked"
     tip = " title='Expand/collapse section'" if enabled else ""
 
     return (
-        f"<input id='{data_id}' class='ad-section-summary-in check-{name}' "
-        f"type='checkbox' {enabled} {collapsed} data-blockname='{name}'>"
+        f"<input data-anndata='{name}' id='{data_id}' class='ad-section-summary-in'"
+        f"type='checkbox' {enabled_str} {collapsed_str}>"
         f"<label for='{data_id}' class='ad-section-summary' {tip}>"
         f"{name}:{n_items_span}</label>"
         f"<div class='ad-section-inline-details'>{inline_details}</div>"
@@ -198,7 +198,7 @@ def collapsible_section(
     )
 
 
-def _obj_repr(obj, header_components, sections,unique_name=""):
+def _obj_repr(obj, header_components, sections):
     """Return HTML repr of an xarray object.
 
     If CSS is not injected (untrusted notebook), fallback to the plain text repr.
@@ -207,10 +207,16 @@ def _obj_repr(obj, header_components, sections,unique_name=""):
     header = f"<div class='ad-header'>{''.join(h for h in header_components)}</div>"
     sections = "".join(f"<li class='ad-section-item'>{s}</li>" for s in sections)
 
-    icons_svg, css_style = _load_static_files()
+    root_id = str(uuid.uuid4().hex)
+
+    icons_svg, css_style, js_code_compact, js_code_complete = _load_static_files()
+    js_code_compact = js_code_compact.replace("__ID__", root_id)
+    js_code_complete = js_code_complete.replace("__ID__", root_id)
     return (
-        f"<div id='output_{unique_name}'>"
+        f"<div id={root_id}>"
         f"{icons_svg}<style>{css_style}</style>"
+        f'<script type="module">{js_code_compact}</script>'
+        f'<script type="module">{js_code_complete}</script>'
         f"<pre class='ad-text-repr-fallback'>{escape(repr(obj))}</pre>"
         "<div class='ad-wrap' style='display:none'>"
         f"{header}"
@@ -314,3 +320,4 @@ def maybe_truncate(obj: typing.Any, maxlen: int = 500):
 def inline_variable_array_repr(col: pd.Series, max_width: int):
     """Build a one-line summary of a variable's data."""
     return format_array_flat(col, max_width)
+

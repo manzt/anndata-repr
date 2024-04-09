@@ -1,4 +1,3 @@
-
 __all__ = [
     "dataframe_to_table",
 ]

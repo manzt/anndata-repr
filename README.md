@@ -14,6 +14,6 @@ pip install -e .[dev]
 ```
 
 ```sh
-# start jupyter lab and open notebooks
+# start jupyter lab and open example.ipynb
 jupyter lab
 ```

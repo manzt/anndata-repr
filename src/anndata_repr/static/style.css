@@ -1,6 +1,4 @@
-/* CSS stylesheet for displaying xarray objects in jupyterlab.
- *
- */
+/* CSS stylesheet for displaying xarray objects in jupyterlab. */
 
 :root {
   --ad-font-color0: var(--jp-content-font-color0, rgba(0, 0, 0, 1));
@@ -29,7 +27,7 @@ body.vscode-dark {
 .ad-wrap {
   display: block !important;
   min-width: 300px;
-  max-width: 100%;
+  max-width: 700px;
 }
 
 .ad-text-repr-fallback {
