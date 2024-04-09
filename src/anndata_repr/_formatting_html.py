@@ -111,19 +111,26 @@ def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
     )
 
 
-def summarize_obsvar(obsvar: pd.DataFrame) -> str:
+def summarize_obsvar(obsvar: pd.DataFrame, as_df: bool) -> str:
     """Summarize the obs or var DataFrame.
 
     Parameters
     ----------
-    variables : pd.DataFrame
+    obsvar : pd.DataFrame
         The obs or var DataFrame to summarize.
+
+    as_df : bool
+        Whether to display the DataFrame as a table (using pandas's HTML repr)
+        or a collapsible list of columns.
 
     Returns
     -------
     str
         The HTML representation of the variables.
     """
+    if as_df:
+        return obsvar._repr_html_()
+
     li_items = []
     for k in obsvar:
         assert isinstance(k, str), "Column of dataframe is not a string"
@@ -277,13 +284,13 @@ def format_anndata_html(
         ),
         collapsible_section(
             "obs",
-            details=summarize_obsvar(adata.obs),
+            details=summarize_obsvar(adata.obs, as_df=True),
             n_items=len(adata.obs.columns),
             collapsed=True,
         ),
         collapsible_section(
             "var",
-            details=summarize_obsvar(adata.var),
+            details=summarize_obsvar(adata.var, as_df=True),
             n_items=len(adata.var.columns),
             collapsed=True,
         ),
