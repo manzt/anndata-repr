@@ -1,7 +1,10 @@
 import math
 import pathlib
+
 import pandas as pd
-from anndata_repr._formatting_table import dataframe_to_table
+
+from ._formatting_table import dataframe_to_table
+
 
 def get_display(adata):
     svg = get_svg(adata)
