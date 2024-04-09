@@ -1,6 +1,8 @@
 function main() {
     const root = document.getElementById("__ID__");
+    console.log(root)
     const svg = root.querySelector(".adata-overview");
+    console.log(svg)
     if (!svg) return;
 
     const blocks = svg.querySelectorAll(".ad-block")

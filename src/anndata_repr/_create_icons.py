@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import math
 import typing
 
 import pandas as pd
-
-from ._formatting_html import dataframe_to_table
-
 
 if typing.TYPE_CHECKING:
     import anndata
@@ -206,7 +204,7 @@ def get_svg(adata: anndata.AnnData):
         </g>"""
 
     svg = (
-        f'<svg viewBox="0 0 {x_total} {y_total}"'
+        f'<svg class="adata-overview" viewBox="0 0 {x_total} {y_total}"'
         f"<defs>"
         f"{style}"
         f"{uns}"
@@ -263,11 +261,11 @@ def get_layers(
     class_name_front: str,
     class_name_back: str,
     n_layers: int,
-    x_base: int,
-    y_base: int,
+    x_base: float,
+    y_base: float,
     margin_layer: int,
-    width: int,
-    height: int,
+    width: float,
+    height: float,
     shape_text: str = "",
 ):
     layer_list = []
@@ -304,7 +302,7 @@ def get_layer_table(adata: anndata.AnnData):
         list_blocks.append(["x", n_layers, names_layers])
 
     for key in ["obsm", "varm", "obsp", "varp"]:
-        try:
+        with contextlib.suppress(Exception):
             obj = getattr(adata, key)
             n_layers = len(obj)
             if n_layers == 0:
@@ -312,11 +310,5 @@ def get_layer_table(adata: anndata.AnnData):
             names_layers = list(obj)
             list_blocks.append([key, n_layers, names_layers])
 
-        finally:
-            pass
-
-    df = pd.DataFrame(list_blocks, columns=["layer", "n", "names"])
-
-    df_str = dataframe_to_table(df, 100)
-
-    return df_str
+    df = pd.DataFrame(list_blocks, columns=("layer", "n", "names"))
+    return df._repr_html_()
