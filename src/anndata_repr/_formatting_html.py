@@ -331,3 +331,4 @@ def format_anndata_html(
 
 format_anndata_html_complete = partial(format_anndata_html, render_preview=get_display)
 format_anndata_html_compact = partial(format_anndata_html, render_preview=anndata_svg)
+

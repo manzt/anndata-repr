@@ -14,13 +14,11 @@ import uuid
 from datetime import datetime, timedelta
 from functools import lru_cache
 from html import escape
-from importlib.resources import files
 from itertools import chain, zip_longest
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 
 if typing.TYPE_CHECKING:
     duckarray = typing.Any
@@ -322,3 +320,4 @@ def maybe_truncate(obj: typing.Any, maxlen: int = 500):
 def inline_variable_array_repr(col: pd.Series, max_width: int):
     """Build a one-line summary of a variable's data."""
     return format_array_flat(col, max_width)
+
