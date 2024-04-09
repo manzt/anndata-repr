@@ -8,8 +8,6 @@ function main() {
 
     for (let b of blocks) {
         let anndataName = b.getAttribute("id");
-        console.log(anndataName);
-
         b.addEventListener("mouseover", () => {
             change_opacity(blocks, b, 0.5)
         })
@@ -18,7 +16,7 @@ function main() {
         })
         b.addEventListener("click", (event) => {
             for (let e of elements) {
-                if (e.dataset?.anndata !== b.getAttribute("id")){
+                if (e.dataset?.anndata !== anndataName){
                     e.checked = false
                 } else {
                     e.checked = true
