@@ -152,7 +152,7 @@ def _load_static_files() -> tuple[str, str, str, str]:
         (static_files / "icons-svg-inline.html").read_text(encoding="utf-8"),
         (static_files / "style.css").read_text(encoding="utf-8"),
         (static_files / "script.js").read_text(encoding="utf-8"),
-        (static_files / 'hover_icons.js').read_text(encoding="utf-8"),
+        (static_files / "hover_icons.js").read_text(encoding="utf-8"),
     )
 
 
