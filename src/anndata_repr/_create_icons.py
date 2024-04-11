@@ -144,7 +144,16 @@ def get_svg(adata: anndata.AnnData):
         f"</g>"
     )
 
-    
+ # OBSM
+    obsm = get_layers(
+        "obsm",
+        n_layers_obsm,
+        x_base_obsm,
+        y_base,
+        margin_layer,
+        size_cols_obsm,
+        size_rows_x,
+    )
 
     # OBSP
     obsp = get_layers(
@@ -154,17 +163,6 @@ def get_svg(adata: anndata.AnnData):
         y_base,
         margin_layer,
         size_rows_x,
-        size_rows_x,
-    )
-
-    # OBSM
-    obsm = get_layers(
-        "obsm",
-        n_layers_obsm,
-        x_base_obsm,
-        y_base,
-        margin_layer,
-        size_cols_obsm,
         size_rows_x,
     )
 
@@ -212,8 +210,8 @@ def get_svg(adata: anndata.AnnData):
         f"{x}"
         f"{obs}"
         f"{var}"
-        f"{obsm}"
         f"{obsp}"
+        f"{obsm}"
         f"{varm}"
         f"{varp}"
         f"</g>"
