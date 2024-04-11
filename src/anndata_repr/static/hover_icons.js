@@ -12,11 +12,11 @@ function main() {
     let anndataName = b.getAttribute("id");
     b.addEventListener("mouseover", () => {
       change_opacity(blocks, b, 0.5);
-      expandBlockName(b);
+      addNameBackground(b);
     });
     b.addEventListener("mouseout", () => {
       change_opacity(blocks, 0, 1);
-      hideBlockName(b);
+      removeNameBackground(b);
     });
     b.addEventListener("click", (event) => {
       for (let e of elements) {
@@ -28,13 +28,15 @@ function main() {
       }
     });
   }
-  function hideBlockName(block) {
+
+  function removeNameBackground(block) {
     block.querySelectorAll(".text-background").forEach((rect) => {
       // Remove the rect when not hovered
       block.removeChild(rect);
     });
   }
-  function expandBlockName(blockElement) {
+
+  function addNameBackground(blockElement) {
     blockElement.querySelectorAll("text").forEach((text) => {
       let bbox = text.getBBox();
       let padding = 2; // Adjust padding around the text
@@ -44,6 +46,7 @@ function main() {
       rect.setAttribute("width", bbox.width + 2 * padding);
       rect.setAttribute("height", bbox.height + 2 * padding);
       rect.setAttribute("class", "text-background");
+      rect.setAttribute("pointer-events", "none");
 
       // Insert the rect before the text node in the SVG.
       blockElement.insertBefore(rect, text);
