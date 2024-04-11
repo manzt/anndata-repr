@@ -81,37 +81,19 @@ def get_svg(adata: anndata.AnnData):
         else y_base_varp + margin_side + y_extra
     )
 
-    # SVG
-
-    # change cls to be the color of the block 
-    # add block 
-
-    
-
-    #             .cls-11,.cls-2,.cls-4,.cls-5,.cls-6,.cls-7,.cls-8,.cls-9{}
-
     # TOP LEVEL
     style = """<style>
-            .cls-2,.cls-21{fill:#efc41c;} .obs{fill:#efc41c;}
-            .block-rects {stroke:#010101;stroke-miterlimit:10;stroke-width:0.5px;} 
-             .blockText{fill:#fff;}
-             .obsp{fill:#f15c5a;}
-             .varp{fill:#965ba5;}
-             .varm{fill:#194c61;}
-             .obsm{fill:#ef9021;}
-            .cls-10,.cls-8{fill:#3c8b53;} .X{fill:#3c8b53;}
-            .cls-9{fill:#4fba6f;} .X2{fill:#4fba6f;} 
-            .cls-11,.cls-25{fill:#2c96c0;} .var{fill:#2c96c0;}
+            .block-rect {stroke:#010101;stroke-miterlimit:10;stroke-width:0.5px;} 
+            .block-text{fill:#fff;}
+            .obs{fill:#efc41c;}
+            .obsp{fill:#f15c5a;}
+            .varp{fill:#965ba5;}
+            .varm{fill:#194c61;}
+            .obsm{fill:#ef9021;}
+            .X{fill:#3c8b53;}
+            .var{fill:#2c96c0;}
             .uns-braces{fill:#010101}
             .uns-name{fill:#231f20}
-            .uns-stroke{stroke:white;stroke-width:2px}
-            .var-line{fill:#2c96c0;}
-            .obs-line{fill:#efc41c;}
-            .cls-17{fill:#4899d4;}
-            #var-names-horizontal .var-line{mask:url(#mask-var-names-horizontal)}
-            #obs-names-horizontal .obs-line{mask:url(#mask-obs-names-horizontal)}
-            #var-names-vertical .var-line{mask:url(#mask-var-names-vertical)}
-            #obs-names-vertical .obs-line{mask:url(#mask-obs-names-vertical)}
         </style>"""
 
     # X
@@ -129,16 +111,16 @@ def get_svg(adata: anndata.AnnData):
     # OBS
     obs = (
         f'<g id="obs" class="ad-block obs">'
-        f'<rect class="block-rects" x={x_base_obs} y={y_base} width={size_cols_obs} height={size_rows_x} />'
-        f'<text class="blockText" text-anchor="middle" dominant-baseline="middle" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2-10}>obs</text>'
-        f'<text class="blockText" text-anchor="middle" dominant-baseline="middle" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2+10}>{(adata.obs.shape[0], adata.obs.shape[1])}</text>'
+        f'<rect class="block-rect" x={x_base_obs} y={y_base} width={size_cols_obs} height={size_rows_x} />'
+        f'<text class="block-text" text-anchor="middle" dominant-baseline="middle" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2-10}>obs</text>'
+        f'<text class="block-text" text-anchor="middle" dominant-baseline="middle" x={x_base_obs + size_cols_obs/2} y={y_base + size_rows_x/2+10}>{(adata.obs.shape[0], adata.obs.shape[1])}</text>'
         f"</g>"
     )
 
     # VAR
     var = (
         f'<g id="var" class="ad-block var">'
-        f'<rect class="block-rects" x={x_base} y={y_base_var} width={size_cols_x} height={size_rows_var} />'
+        f'<rect class="block-rect" x={x_base} y={y_base_var} width={size_cols_x} height={size_rows_var} />'
         f'<text text-anchor="middle" dominant-baseline="middle" class="blockText" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2-10}>var</text>'
         f'<text text-anchor="middle" dominant-baseline="middle" class="blockText" x={x_base + size_cols_x/2} y={y_base_var + size_rows_var/2+10}>{(adata.var.shape[0], adata.var.shape[1])}</text>'
         f"</g>"
@@ -268,16 +250,16 @@ def get_layers(
         if n_layers > 1:
             for i in range(n_layers - 1, 0, -1):
                 layer_list.append(
-                    f"<rect class='block-rects' x={x_base - i*margin_layer} y={y_base + i*margin_layer} width={width} height={height} />"
+                    f"<rect class='block-rect' x={x_base - i*margin_layer} y={y_base + i*margin_layer} width={width} height={height} />"
                 )
         layer_list.append(
-            f"<rect class='block-rects' x={x_base} y={y_base} width={width} height={height} />"
+            f"<rect class='block-rect' x={x_base} y={y_base} width={width} height={height} />"
         )
     layers = (
         f'<g id={g_name} class="ad-block {g_name}">'
         f'{"".join(layer_list)}'
-        f'<text class="blockText" text-anchor="middle" dominant-baseline="middle" x={x_base + width/2} y={y_base + height/2-10}>{g_name}</text>'
-        f'<text class="blockText" text-anchor="middle" dominant-baseline="middle" x={x_base + width/2} y={y_base + height/2+10}>{shape_text}</text>'
+        f'<text class="block-text" text-anchor="middle" dominant-baseline="middle" x={x_base + width/2} y={y_base + height/2-10}>{g_name}</text>'
+        f'<text class="block-text" text-anchor="middle" dominant-baseline="middle" x={x_base + width/2} y={y_base + height/2+10}>{shape_text}</text>'
         f'</g>'
     )
     return layers
