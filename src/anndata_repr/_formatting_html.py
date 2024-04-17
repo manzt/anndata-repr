@@ -3,25 +3,23 @@ from __future__ import annotations
 import typing
 import uuid
 from html import escape
-from functools import partial
 
-from ._svg import anndata_svg
+import pandas as pd
+
 from ._formatting_html_xarray import (
     _icon,
     _obj_repr,
     collapsible_section,
-    short_data_repr_html,
     inline_variable_array_repr,
+    short_data_repr_html,
 )
-from ._create_icons import get_display
-from ._formatting_table import dataframe_to_table
-import pandas as pd
+from ._svg import anndata_svg
 
 if typing.TYPE_CHECKING:
     import anndata
-    from anndata._core.aligned_mapping import PairwiseArraysBase, AxisArraysBase
+    from anndata._core.aligned_mapping import AxisArraysBase, PairwiseArraysBase
 
-__all__ = ["format_anndata_html_compact", "format_anndata_html_complete"]
+__all__ = ["format_anndata_html"]
 
 
 def summarize_series(obj: pd.Series) -> str:
@@ -88,25 +86,6 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
         f"<input id='{data_id}' class='ad-var-data-in' type='checkbox'>"
         f"<label for='{data_id}' title='Show/Hide data repr'>{data_icon}</label>"
         f"<div class='ad-var-attrs'>{attrs_ul}</div>"
-        f"<div class='ad-var-data'>{data_repr}</div>"
-    )
-
-
-def summarize_table(df: pd.DataFrame, is_index: bool = True) -> str:
-    name = "Table"
-    cssclass_idx = " class='ad-has-index'" if is_index else ""
-
-    # "unique" ids required to expand/collapse subsections
-    data_id = "data-" + str(uuid.uuid4())
-
-    data_repr = dataframe_to_table(df[0:10])
-
-    data_icon = _icon("icon-database")
-
-    return (
-        f"<div class='ad-var-name'><span{cssclass_idx}>{name}</span></div>"
-        f"<input id='{data_id}' class='ad-var-data-in' type='checkbox'>"
-        f"<label for='{data_id}' title='Show/Hide data repr'>{data_icon}</label>"
         f"<div class='ad-var-data'>{data_repr}</div>"
     )
 
@@ -243,10 +222,7 @@ def summaize_uns(uns: typing.MutableMapping) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
-def format_anndata_html(
-    adata: anndata.AnnData,
-    render_preview: typing.Callable[[anndata.AnnData], str],
-) -> str:
+def format_anndata_html(adata: anndata.AnnData) -> str:
     """Format an AnnData object as an HTML string.
 
     Parameters
@@ -275,7 +251,7 @@ def format_anndata_html(
     ]
 
     sections = [
-        array_section(adata, render_preview=render_preview),
+        array_section(adata, render_preview=anndata_svg),
         collapsible_section(
             "layers",
             details=summarize_X(adata),
@@ -327,8 +303,3 @@ def format_anndata_html(
     ]
 
     return _obj_repr(adata, header_components, sections)
-
-
-format_anndata_html_complete = partial(format_anndata_html, render_preview=get_display)
-format_anndata_html_compact = partial(format_anndata_html, render_preview=anndata_svg)
-
