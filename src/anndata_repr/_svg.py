@@ -18,13 +18,13 @@ class Color:
 
 
 _COLORS = {
-    "X": Color("#3c8b53"),
-    "var": Color("#2c96c0"),
-    "obs": Color("#efc41c"),
-    "obsm": Color("#ef9021"),
-    "obsp": Color("#f15c5a"),
-    "varm": Color("#194c61"),
-    "varp": Color("#965ba5"),
+    "X": Color("#3c8b53"),  # green
+    "var": Color("#2c96c0"),  # sky blue
+    "obs": Color("#efc41c"),  # yellow
+    "obsm": Color("#ef9021"),  # orange
+    "obsp": Color("#f15c5a"),  # red
+    "varm": Color("#194c61"),  # dark blue
+    "varp": Color("#965ba5"),  # purple
 }
 
 
