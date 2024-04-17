@@ -90,7 +90,7 @@ def summarize_columns(name: str, col: pd.Series, is_index: bool = True) -> str:
     )
 
 
-def summarize_obsvar(obsvar: pd.DataFrame, as_df: bool) -> str:
+def summarize_obsvar(obsvar: pd.DataFrame) -> str:
     """Summarize the obs or var DataFrame.
 
     Parameters
@@ -107,9 +107,6 @@ def summarize_obsvar(obsvar: pd.DataFrame, as_df: bool) -> str:
     str
         The HTML representation of the variables.
     """
-    if as_df:
-        return obsvar._repr_html_()
-
     li_items = []
     for k in obsvar:
         assert isinstance(k, str), "Column of dataframe is not a string"
@@ -260,13 +257,13 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
         ),
         collapsible_section(
             "obs",
-            details=summarize_obsvar(adata.obs, as_df=True),
+            details=summarize_obsvar(adata.obs),
             n_items=len(adata.obs.columns),
             collapsed=True,
         ),
         collapsible_section(
             "var",
-            details=summarize_obsvar(adata.var, as_df=True),
+            details=summarize_obsvar(adata.var),
             n_items=len(adata.var.columns),
             collapsed=True,
         ),
