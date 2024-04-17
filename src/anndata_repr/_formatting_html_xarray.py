@@ -143,14 +143,13 @@ STATIC_FILES = (
 
 
 # @lru_cache(None)
-def _load_static_files() -> tuple[str, str, str, str]:
+def _load_static_files() -> tuple[str, str, str]:
     """Lazily load the resource files into memory the first time they are needed"""
     static_files = Path(__file__).parent / "static"
     return (
         (static_files / "icons-svg-inline.html").read_text(encoding="utf-8"),
         (static_files / "style.css").read_text(encoding="utf-8"),
         (static_files / "script.js").read_text(encoding="utf-8"),
-        (static_files / "hover_icons.js").read_text(encoding="utf-8"),
     )
 
 
@@ -209,14 +208,12 @@ def _obj_repr(obj, header_components, sections):
 
     root_id = str(uuid.uuid4().hex)
 
-    icons_svg, css_style, js_code_compact, js_code_complete = _load_static_files()
-    js_code_compact = js_code_compact.replace("__ID__", root_id)
-    js_code_complete = js_code_complete.replace("__ID__", root_id)
+    icons_svg, css_style, js_code = _load_static_files()
+    js_code = js_code.replace("__ID__", root_id)
     return (
         f"<div id={root_id}>"
         f"{icons_svg}<style>{css_style}</style>"
-        f'<script type="module">{js_code_compact}</script>'
-        f'<script type="module">{js_code_complete}</script>'
+        f'<script type="module">{js_code}</script>'
         f"<pre class='ad-text-repr-fallback'>{escape(repr(obj))}</pre>"
         "<div class='ad-wrap' style='display:none'>"
         f"{header}"
@@ -320,4 +317,3 @@ def maybe_truncate(obj: typing.Any, maxlen: int = 500):
 def inline_variable_array_repr(col: pd.Series, max_width: int):
     """Build a one-line summary of a variable's data."""
     return format_array_flat(col, max_width)
-
