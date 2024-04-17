@@ -11,17 +11,20 @@ if typing.TYPE_CHECKING:
 @dataclass
 class Color:
     primary: str
-    hover: str
+
+    @property
+    def hover(self):
+        return f"color-mix(in srgb, {self.primary}, white 20%)"
 
 
 _COLORS = {
-    "X": Color("#34d399", "#10b981"),  # green
-    "var": Color("#38bdf8", "#0ea5e9"),  # sky blue
-    "obs": Color("#facc15", "#eab308"),  # yellow
-    "obsm": Color("#fb923c", "#f97316"),  # orange
-    "obsp": Color("#f87171", "#ef4444"),  # red
-    "varm": Color("#0369a1", "#0c4a6e"),  # dark sky blue
-    "varp": Color("#c084fc", "#a855f7"),  # purple
+    "X": Color("#3c8b53"),
+    "var": Color("#2c96c0"),
+    "obs": Color("#efc41c"),
+    "obsm": Color("#ef9021"),
+    "obsp": Color("#f15c5a"),
+    "varm": Color("#194c61"),
+    "varp": Color("#965ba5"),
 }
 
 
@@ -85,7 +88,7 @@ def anndata_svg(
     )
     handle_text_style_h = f'{handle_text_style} dy="0.4em"'
     handle_text_style_v = f'{handle_text_style} dy="0.3em" transform="rotate(-90, {handle_size / 2}, {h / 2})"'
-    rx = 3
+    rx = 0  # corner radius
 
     svg = [
         f'<svg class="ad-svg" xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{total_height}" shape-rendering="crispEdges" text-rendering="geometricPrecision" tabindex="0">',
