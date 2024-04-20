@@ -60,6 +60,9 @@ def style_tag():
             #{name}:hover {{
                 fill: {color.hover};
             }}
+            #{name}.no-search {{
+                fill: {color.hover};
+            }}
             """
 
     styles = [

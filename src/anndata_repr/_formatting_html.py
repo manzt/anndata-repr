@@ -219,6 +219,17 @@ def summaize_uns(uns: typing.MutableMapping) -> str:
     return f"<ul class='ad-var-list'>{vars_li}</ul>"
 
 
+def search_bar() -> str:
+    return (
+        '<form class="ad-search">'
+        '<div class="ad-search-input-group">'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>'
+        '<input type="text" placeholder="Search...">'
+        "</div>"
+        "</form>"
+    )
+
+
 def format_anndata_html(adata: anndata.AnnData) -> str:
     """Format an AnnData object as an HTML string.
 
@@ -243,8 +254,10 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     )
 
     header_components = [
-        f"<div class='ad-obj-type'>{obj_type}</div>",
+        "<div>" f"<span class='ad-obj-type'>{obj_type}</span>",
         f"<ul class='ad-dim-list'>{dims_li}</ul>",
+        "</div>",
+        search_bar(),
     ]
 
     sections = [
