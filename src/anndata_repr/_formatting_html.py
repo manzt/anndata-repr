@@ -254,7 +254,8 @@ def format_anndata_html(adata: anndata.AnnData) -> str:
     )
 
     header_components = [
-        "<div>" f"<span class='ad-obj-type'>{obj_type}</span>",
+        "<div>",
+        f"<span class='ad-obj-type'>{obj_type}</span>",
         f"<ul class='ad-dim-list'>{dims_li}</ul>",
         "</div>",
         search_bar(),
