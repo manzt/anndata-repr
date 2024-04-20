@@ -40,13 +40,53 @@ body.vscode-dark {
   padding-bottom: 6px;
   margin-bottom: 4px;
   border-bottom: solid 1px var(--ad-border-color);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 0px;
 }
 
-.ad-header > div,
-.ad-header > ul {
-  display: inline;
-  margin-top: 0;
-  margin-bottom: 0;
+.ad-header > div {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ad-header > div > ul {
+  margin: 0;
+}
+
+.ad-search-input-group {
+  position: relative;
+}
+
+.ad-search-input-group svg {
+  position: absolute;
+  top: 50%;
+  left: 5px;
+  transform: translateY(-50%);
+  color: var(--ad-font-color2);
+}
+
+.ad-search-input-group input {
+  padding: 2px;
+  padding-left: 30px;
+  border: solid 1px var(--ad-border-color);
+  border-radius: 4px;
+  transition: all 0.2s;
+  max-width: 120px;
+}
+
+.ad-search-input-group input:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--ad-font-color3);
+}
+
+.ad-search-input-group input:hover {
+  border-color: var(--ad-font-color3);
+}
+
+.ad-search-input-group input::placeholder {
+  color: var(--ad-font-color3);
 }
 
 .ad-obj-type,
